@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@privy-io/react-auth": "^3.12.0",
+    "@privy-io/wagmi": "^4.0.0",
+    "@tanstack/react-query": "^5.90.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.563.0",
@@ -17,7 +20,8 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "wagmi": "^3.4.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
