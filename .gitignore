@@ -39,6 +39,7 @@ staticfiles/
 out/
 .vercel
 node_modules/
+generated/
 .pnp/
 .pnp.js
 npm-debug.log*
