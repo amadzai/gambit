@@ -6,3 +6,26 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Color {
+  WHITE
+  BLACK
+}
+
+enum GameStatus {
+  ACTIVE
+  CHECKMATE
+  STALEMATE
+  DRAW
+  RESIGNED
+}
+
+model ChessGame {
+  id     String     @id @default(cuid())
+  fen    String
+  turn   Color
+  status GameStatus
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
