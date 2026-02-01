@@ -4,4 +4,4 @@ import { ChessRulesService } from './providers/chess-rules.service.js';
 @Module({
   providers: [ChessRulesService],
 })
-export class ChessModule {}
+export class ChessServiceModule {}
