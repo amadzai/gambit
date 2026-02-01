@@ -1,10 +1,10 @@
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { APP_INTERCEPTOR, APP_PIPE, Reflector } from '@nestjs/core';
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { PrismaModule } from './service-modules/prisma/prisma.module';
-import { BigIntSerializerInterceptor } from './interceptors/big-int-serializer.interceptor';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+import { PrismaModule } from './service-modules/prisma/prisma.module.js';
+import { BigIntSerializerInterceptor } from './interceptors/big-int-serializer.interceptor.js';
 
 @Module({
   imports: [PrismaModule],
