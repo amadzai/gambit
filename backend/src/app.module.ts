@@ -5,9 +5,10 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PrismaModule } from './service-modules/prisma/prisma.module.js';
 import { BigIntSerializerInterceptor } from './interceptors/big-int-serializer.interceptor.js';
+import { ChessModule } from './service-modules/chess/chess.module.js';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, ChessModule],
   controllers: [AppController],
   providers: [
     AppService,
