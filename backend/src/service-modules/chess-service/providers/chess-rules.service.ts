@@ -15,10 +15,18 @@ import {
   MakeMoveDto,
   MoveResult,
 } from '../interfaces/chess-rules.interface.js';
+import {
+  EngineMoveRequest,
+  EngineMoveResponse,
+} from '../interfaces/chess-engine.interface.js';
+import { ChessEngineService } from './chess-engine.service.js';
 
 @Injectable()
 export class ChessRulesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private chessEngineService: ChessEngineService,
+  ) {}
 
   /**
    * Create a new chess game with starting position
@@ -199,6 +207,49 @@ export class ChessRulesService {
         turn,
         status,
       },
+    });
+  }
+
+  /**
+   * Request candidate moves from the engine for the current position.
+   * Resolves position from gameId (DB) or from direct fen/pgn.
+   * Agent picks from the returned set based on playstyle, then can call makeMove().
+   */
+  async requestMove(request: EngineMoveRequest): Promise<EngineMoveResponse> {
+    let fen: string;
+
+    if (request.gameId) {
+      const game = await this.getGame(request.gameId);
+      if (game.status !== GameStatus.ACTIVE) {
+        throw new BadRequestException(
+          `Game is not active. Status: ${game.status}`,
+        );
+      }
+      const chess = this.loadGameState(game);
+      fen = chess.fen();
+    } else if (request.fen) {
+      const chess = new Chess(request.fen);
+      fen = chess.fen();
+    } else if (request.pgn && request.pgn.trim() !== '') {
+      const chess = new Chess();
+      try {
+        chess.loadPgn(request.pgn);
+      } catch {
+        throw new BadRequestException('Invalid PGN');
+      }
+      fen = chess.fen();
+    } else {
+      throw new BadRequestException(
+        'Provide gameId, fen, or pgn to request moves',
+      );
+    }
+
+    return this.chessEngineService.getCandidateMoves(fen, {
+      multiPv: request.multiPv,
+      movetimeMs: request.movetimeMs,
+      depth: request.depth,
+      elo: request.elo,
+      skill: request.skill,
     });
   }
 
