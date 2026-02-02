@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
@@ -23,6 +24,8 @@ import { ChessEngineService } from './chess-engine.service.js';
 
 @Injectable()
 export class ChessRulesService {
+  private readonly logger = new Logger(ChessRulesService.name);
+
   constructor(
     private prisma: PrismaService,
     private chessEngineService: ChessEngineService,
@@ -33,14 +36,15 @@ export class ChessRulesService {
    */
   async createGame(): Promise<ChessGame> {
     const chess = new Chess();
-
-    return this.prisma.chessGame.create({
+    const game = await this.prisma.chessGame.create({
       data: {
         fen: chess.fen(),
         turn: Color.WHITE,
         status: GameStatus.ACTIVE,
       },
     });
+    this.logger.log(`Game created: ${game.id}`);
+    return game;
   }
 
   /**
@@ -63,6 +67,7 @@ export class ChessRulesService {
    * Validates the move, updates the game state, and returns the result
    */
   async makeMove(gameId: string, moveDto: MakeMoveDto): Promise<MoveResult> {
+    this.logger.log(`makeMove gameId=${gameId} ${moveDto.from}→${moveDto.to}`);
     const game = await this.getGame(gameId);
 
     if (game.status !== GameStatus.ACTIVE) {
@@ -105,6 +110,9 @@ export class ChessRulesService {
       },
     });
 
+    this.logger.log(
+      `Move applied: ${move.san} (check=${chess.isCheck()}, gameOver=${chess.isGameOver()})`,
+    );
     return {
       success: true,
       game: updatedGame,
@@ -216,6 +224,9 @@ export class ChessRulesService {
    * Agent picks from the returned set based on playstyle, then can call makeMove().
    */
   async requestMove(request: EngineMoveRequest): Promise<EngineMoveResponse> {
+    this.logger.log(
+      `requestMove gameId=${request.gameId ?? '—'} multiPv=${request.multiPv ?? 'default'} elo=${request.elo ?? '—'}`,
+    );
     let fen: string;
 
     if (request.gameId) {
@@ -244,13 +255,17 @@ export class ChessRulesService {
       );
     }
 
-    return this.chessEngineService.getCandidateMoves(fen, {
+    const result = await this.chessEngineService.getCandidateMoves(fen, {
       multiPv: request.multiPv,
       movetimeMs: request.movetimeMs,
       depth: request.depth,
       elo: request.elo,
       skill: request.skill,
     });
+    this.logger.log(
+      `requestMove returning ${result.candidates.length} candidate(s)`,
+    );
+    return result;
   }
 
   /**

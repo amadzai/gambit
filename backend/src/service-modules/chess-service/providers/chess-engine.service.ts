@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { spawn, ChildProcess } from 'node:child_process';
 import {
   EngineMoveResponse,
@@ -16,6 +16,7 @@ const ANALYSIS_TIMEOUT_BUFFER_MS = 500;
 
 @Injectable()
 export class ChessEngineService implements OnModuleDestroy {
+  private readonly logger = new Logger(ChessEngineService.name);
   private process: ChildProcess | null = null;
   private initPromise: Promise<void> | null = null;
   private mutex: Promise<void> = Promise.resolve();
@@ -48,6 +49,9 @@ export class ChessEngineService implements OnModuleDestroy {
     const depth = options.depth;
 
     return this.withMutex(async () => {
+      this.logger.log(
+        `getCandidateMoves fen="${fen.slice(0, 30)}…" multiPv=${multiPv} movetimeMs=${movetimeMs} elo=${options.elo ?? '—'} skill=${options.skill ?? '—'}`,
+      );
       await this.ensureEngine();
       const timeoutMs =
         (depth ? 60000 : movetimeMs) + ANALYSIS_TIMEOUT_BUFFER_MS;
@@ -74,6 +78,9 @@ export class ChessEngineService implements OnModuleDestroy {
       }
 
       const candidates = await this.sendAndParse(commands, multiPv, timeoutMs);
+      this.logger.log(
+        `getCandidateMoves returning ${candidates.length} candidate(s)`,
+      );
       return { fen, candidates };
     });
   }
@@ -118,6 +125,7 @@ export class ChessEngineService implements OnModuleDestroy {
   }
 
   private startEngine(): Promise<void> {
+    this.logger.log('Spawning Stockfish process');
     return new Promise((resolve, reject) => {
       try {
         this.process = spawn(ChessEngineService.STOCKFISH_CMD, [], {
@@ -158,6 +166,7 @@ export class ChessEngineService implements OnModuleDestroy {
             }
           };
           proc.stdout?.on('data', readyHandler);
+          this.logger.log('Stockfish ready');
         }
       };
       proc.stdout?.on('data', uciHandler);
@@ -181,6 +190,7 @@ export class ChessEngineService implements OnModuleDestroy {
   }
 
   private onEngineError(): void {
+    this.logger.warn('Stockfish process error, stopping engine');
     this.stopEngine();
   }
 
