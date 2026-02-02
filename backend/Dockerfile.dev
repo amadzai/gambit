@@ -1,6 +1,10 @@
 FROM node:20-slim
 
-RUN apt-get update && apt-get install -y openssl curl procps stockfish
+RUN apt-get update && apt-get install -y openssl curl procps stockfish \
+  && rm -rf /var/lib/apt/lists/*
+
+# Debian installs stockfish to /usr/games; add to PATH so spawn('stockfish') finds it
+ENV PATH="/usr/games:${PATH}"
 
 WORKDIR /app
 
