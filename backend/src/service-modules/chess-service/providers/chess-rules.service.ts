@@ -133,6 +133,22 @@ export class ChessRulesService {
   }
 
   /**
+   * Validate if a move is legal without executing it
+   */
+  async validateMove(gameId: string, moveDto: MakeMoveDto): Promise<boolean> {
+    const game = await this.getGame(gameId);
+    const chess = new Chess(game.fen);
+
+    const legalMoves = chess.moves({ verbose: true });
+    return legalMoves.some(
+      (move) =>
+        move.from === moveDto.from &&
+        move.to === moveDto.to &&
+        (moveDto.promotion ? move.promotion === moveDto.promotion : true),
+    );
+  }
+
+  /**
    * Get current game status and metadata
    */
   async getGameStatus(gameId: string): Promise<{
@@ -156,22 +172,6 @@ export class ChessRulesService {
       isGameOver: chess.isGameOver(),
       legalMoveCount: chess.moves().length,
     };
-  }
-
-  /**
-   * Validate if a move is legal without executing it
-   */
-  async validateMove(gameId: string, moveDto: MakeMoveDto): Promise<boolean> {
-    const game = await this.getGame(gameId);
-    const chess = new Chess(game.fen);
-
-    const legalMoves = chess.moves({ verbose: true });
-    return legalMoves.some(
-      (move) =>
-        move.from === moveDto.from &&
-        move.to === moveDto.to &&
-        (moveDto.promotion ? move.promotion === moveDto.promotion : true),
-    );
   }
 
   /**
