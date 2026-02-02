@@ -139,17 +139,41 @@ export class ChessEngineService implements OnModuleDestroy {
 
       const proc = this.process;
       let buffer = '';
+      let settled = false;
+
+      const settle = (err?: Error): void => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        if (err) {
+          this.initPromise = null;
+          this.stopEngine();
+          this.logger.warn('Stockfish process error, stopping engine');
+          reject(err);
+        } else {
+          resolve();
+        }
+      };
+
+      const timeoutId = setTimeout(() => {
+        if (!settled) {
+          settle(new Error('Stockfish init timeout'));
+        }
+      }, 10000);
 
       proc.stdout?.on('data', (chunk: Buffer) => {
         buffer += chunk.toString('utf8');
       });
 
-      proc.on('error', () => {
-        this.onEngineError();
+      proc.on('error', (err: Error) => {
+        settle(err instanceof Error ? err : new Error(String(err)));
       });
-      proc.on('exit', () => {
+      proc.on('exit', (code: number | null) => {
         this.process = null;
         this.initPromise = null;
+        if (!settled && code != null && code !== 0) {
+          settle(new Error(`Stockfish exited with code ${code}`));
+        }
       });
 
       proc.stdin?.write('uci\n');
@@ -162,22 +186,14 @@ export class ChessEngineService implements OnModuleDestroy {
             buffer += c.toString('utf8');
             if (buffer.includes('readyok')) {
               proc.stdout?.off('data', readyHandler);
-              resolve();
+              this.logger.log('Stockfish ready');
+              settle();
             }
           };
           proc.stdout?.on('data', readyHandler);
-          this.logger.log('Stockfish ready');
         }
       };
       proc.stdout?.on('data', uciHandler);
-
-      setTimeout(() => {
-        if (this.initPromise) {
-          this.initPromise = null;
-          this.stopEngine();
-          reject(new Error('Stockfish init timeout'));
-        }
-      }, 10000);
     });
   }
 
@@ -187,11 +203,6 @@ export class ChessEngineService implements OnModuleDestroy {
       this.process = null;
     }
     this.initPromise = null;
-  }
-
-  private onEngineError(): void {
-    this.logger.warn('Stockfish process error, stopping engine');
-    this.stopEngine();
   }
 
   private sendAndParse(
