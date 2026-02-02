@@ -11,7 +11,7 @@ async function bootstrap() {
   });
 
   const config = new DocumentBuilder()
-    .setTitle('gambAIt API')
+    .setTitle('gambit')
     .setVersion('1.0')
     .build();
 
