@@ -63,8 +63,7 @@ export class ChessRulesService {
       );
     }
 
-    // Load the current position
-    const chess = new Chess(game.fen);
+    const chess = this.loadGameState(game);
 
     let move: Move;
     try {
@@ -92,6 +91,7 @@ export class ChessRulesService {
       where: { id: gameId },
       data: {
         fen: chess.fen(),
+        pgn: chess.pgn(),
         turn: newTurn,
         status: newStatus,
       },
@@ -176,6 +176,7 @@ export class ChessRulesService {
 
   /**
    * Load a specific FEN position into a game (useful for testing)
+   * Note: This clears the PGN history since we're loading an arbitrary position
    */
   async loadPosition(gameId: string, fen: string): Promise<ChessGame> {
     await this.getGame(gameId);
@@ -194,6 +195,7 @@ export class ChessRulesService {
       where: { id: gameId },
       data: {
         fen: chess.fen(),
+        pgn: '',
         turn,
         status,
       },
@@ -218,6 +220,23 @@ export class ChessRulesService {
         status: GameStatus.RESIGNED,
       },
     });
+  }
+
+  /**
+   * Helper method to load game state from PGN (preserves history) or FEN (position only)
+   */
+  private loadGameState(game: ChessGame): Chess {
+    const chess = new Chess();
+
+    // If PGN exists, load it to preserve move history
+    if (game.pgn && game.pgn.trim() !== '') {
+      chess.loadPgn(game.pgn);
+    } else {
+      // Fall back to FEN for games without history (e.g., new games or loaded positions)
+      chess.load(game.fen);
+    }
+
+    return chess;
   }
 
   /**

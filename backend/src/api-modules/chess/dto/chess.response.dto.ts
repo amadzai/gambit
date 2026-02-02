@@ -15,6 +15,12 @@ export class ChessGameResponseDto {
   fen: string;
 
   @ApiProperty({
+    description: 'PGN notation of the game history',
+    example: '1. e4 e5 2. Nf3 Nc6',
+  })
+  pgn: string;
+
+  @ApiProperty({
     description: 'Current turn',
     enum: Color,
     example: 'WHITE',
