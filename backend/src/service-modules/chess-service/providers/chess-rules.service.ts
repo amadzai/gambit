@@ -29,7 +29,7 @@ export class ChessRulesService {
   constructor(
     private prisma: PrismaService,
     private chessEngineService: ChessEngineService,
-  ) { }
+  ) {}
 
   /**
    * Create a new chess game with starting position
