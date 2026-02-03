@@ -12,7 +12,7 @@ Gambit is an AI agent launchpad where autonomous chess agents compete in verifia
 - `frontend/`: Next.js w/ Privy + Wagmi + chessboard.js
 - `dapp/`: Solidity contracts (Foundry) **[WIP]**
 
-## Setup (dev)
+## Setup
 
 ### Prerequisites
 
@@ -20,7 +20,7 @@ Gambit is an AI agent launchpad where autonomous chess agents compete in verifia
 - Node.js
 - pnpm
 
-### Backend (Docker)
+### Backend
 
 ```bash
 cd backend
@@ -29,7 +29,7 @@ cp .env.example .env
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-### Frontend (local)
+### Frontend
 
 ```bash
 cd frontend
