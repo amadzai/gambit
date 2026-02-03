@@ -217,3 +217,55 @@ export class ValidateMoveResponseDto {
   })
   valid: boolean;
 }
+
+export class EngineCandidateMoveResponseDto {
+  @ApiProperty({
+    description: 'UCI move (e.g. e2e4, e7e8q)',
+    example: 'e2e4',
+  })
+  uci: string;
+
+  @ApiProperty({
+    description: 'Principal variation index (1-based)',
+    example: 1,
+  })
+  multipv: number;
+
+  @ApiProperty({
+    description: 'Depth reached for this line',
+    example: 15,
+  })
+  depth: number;
+
+  @ApiPropertyOptional({
+    description: 'Centipawn score (positive = better for side to move)',
+    example: 25,
+  })
+  scoreCp?: number;
+
+  @ApiPropertyOptional({
+    description: 'Mate in N moves (positive = we deliver mate)',
+    example: 3,
+  })
+  mate?: number;
+
+  @ApiPropertyOptional({
+    description: 'Full principal variation in UCI',
+    example: 'e2e4 e7e5 g1f3',
+  })
+  pv?: string;
+}
+
+export class EngineMovesResponseDto {
+  @ApiProperty({
+    description: 'FEN of the position that was analyzed',
+    example: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+  })
+  fen: string;
+
+  @ApiProperty({
+    description: 'Candidate moves from Stockfish (one per MultiPV line)',
+    type: [EngineCandidateMoveResponseDto],
+  })
+  candidates: EngineCandidateMoveResponseDto[];
+}

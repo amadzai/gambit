@@ -20,6 +20,7 @@ import {
   MakeMoveDto,
   LoadPositionDto,
   GetLegalMovesQueryDto,
+  GetEngineMovesQueryDto,
 } from './dto/chess.dto.js';
 import {
   ChessGameResponseDto,
@@ -27,6 +28,7 @@ import {
   LegalMoveResponseDto,
   GameStatusResponseDto,
   ValidateMoveResponseDto,
+  EngineMovesResponseDto,
 } from './dto/chess.response.dto.js';
 
 @ApiTags('Chess')
@@ -142,6 +144,32 @@ export class ChessController {
     @Body() dto: LoadPositionDto,
   ): Promise<ChessGameResponseDto> {
     return this.chessRulesService.loadPosition(id, dto.fen);
+  }
+
+  @Get('games/:id/engine-moves')
+  @ApiOperation({
+    summary: 'Get Stockfish candidate moves for current position',
+  })
+  @ApiParam({ name: 'id', description: 'Game ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Candidate moves from engine',
+    type: EngineMovesResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Game is not active' })
+  @ApiResponse({ status: 404, description: 'Game not found' })
+  async getEngineMoves(
+    @Param('id') id: string,
+    @Query() query: GetEngineMovesQueryDto,
+  ): Promise<EngineMovesResponseDto> {
+    return this.chessRulesService.requestMove({
+      gameId: id,
+      multiPv: query.multiPv,
+      elo: query.elo,
+      skill: query.skill,
+      movetimeMs: query.movetimeMs,
+      depth: query.depth,
+    });
   }
 
   @Post('games/:id/resign')

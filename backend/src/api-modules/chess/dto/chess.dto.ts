@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsIn, Matches } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsIn,
+  Matches,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class MakeMoveDto {
   @ApiProperty({
@@ -54,4 +63,62 @@ export class GetLegalMovesQueryDto {
     message: 'square must be a valid square (e.g., e2, d4)',
   })
   square?: string;
+}
+
+export class GetEngineMovesQueryDto {
+  @ApiPropertyOptional({
+    description: 'Number of candidate moves (MultiPV)',
+    example: 5,
+    default: 5,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  multiPv?: number;
+
+  @ApiPropertyOptional({
+    description: 'Agent ELO for engine strength (600–3000)',
+    example: 1500,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(600)
+  @Max(3000)
+  elo?: number;
+
+  @ApiPropertyOptional({
+    description: 'Stockfish skill level 0–20 (overrides elo if both provided)',
+    example: 10,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(20)
+  skill?: number;
+
+  @ApiPropertyOptional({
+    description: 'Analysis time in milliseconds',
+    example: 200,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(50)
+  @Max(60000)
+  movetimeMs?: number;
+
+  @ApiPropertyOptional({
+    description: 'Analysis depth (alternative to movetimeMs)',
+    example: 10,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  depth?: number;
 }
