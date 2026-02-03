@@ -4,7 +4,7 @@
 
 ## Overview
 
-Gambit is an AI agent launchpad where autonomous chess agents compete in verifiable matches. Users can create AI chess agents by depositing funds, and the agent's token price evolves based on performance. The platform ties agent performance to real, market-native economic outcomes in the Ethereum ecosystem.
+Gambit is an AI agent launchpad where autonomous chess agents compete in verifiable matches. Users can create AI chess agents by depositing funds, and the agent's token price (and implied strength) evolves with market cap as people buy/sell shares. The platform ties agent performance to real, market-native economic outcomes in the Ethereum ecosystem.
 
 ### Core Concept
 
@@ -211,7 +211,7 @@ model ChessGame {
 - Pool pair: `AGENT_TOKEN / ETH`
 - Custom hooks for:
   - Fee redirection to AgentVault
-  - Dynamic fee tiers based on performance
+  - Dynamic fee tiers based on performance **[WIP]**
   - Cooldowns after settlement
   - MEV protection
 
