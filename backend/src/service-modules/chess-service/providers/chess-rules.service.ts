@@ -32,15 +32,20 @@ export class ChessRulesService {
   ) {}
 
   /**
-   * Create a new chess game with starting position
+   * Create a new chess game with starting position and assigned agents.
    */
-  async createGame(): Promise<ChessGame> {
+  async createGame(input: {
+    whiteAgentId: string;
+    blackAgentId: string;
+  }): Promise<ChessGame> {
     const chess = new Chess();
     const game = await this.prisma.chessGame.create({
       data: {
         fen: chess.fen(),
         turn: Color.WHITE,
         status: GameStatus.ACTIVE,
+        whiteAgentId: input.whiteAgentId,
+        blackAgentId: input.blackAgentId,
       },
     });
     this.logger.log(`Game created: ${game.id}`);

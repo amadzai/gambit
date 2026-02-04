@@ -13,7 +13,11 @@ import {
   MoveResult,
 } from '../../chess-service/interfaces/chess-rules.interface.js';
 import { OpenRouterService } from './openrouter.service.js';
-import { Agent, Playstyle } from '../../../../generated/prisma/client.js';
+import {
+  Agent,
+  Color,
+  Playstyle,
+} from '../../../../generated/prisma/client.js';
 
 const DEFAULT_MULTI_PV = 10;
 const UCI_REGEX = /^[a-h][1-8][a-h][1-8][qrbn]?$/;
@@ -64,6 +68,24 @@ export class AgentService {
     });
     if (!agent)
       throw new NotFoundException(`Agent with ID ${agentId} not found`);
+
+    const game = await this.chessRulesService.getGame(req.gameId);
+    const expectedTurn =
+      game.whiteAgentId === agentId
+        ? Color.WHITE
+        : game.blackAgentId === agentId
+          ? Color.BLACK
+          : null;
+    if (!expectedTurn) {
+      throw new BadRequestException(
+        `Agent ${agentId} is not assigned to game ${req.gameId}`,
+      );
+    }
+    if (game.turn !== expectedTurn) {
+      throw new BadRequestException(
+        `Not agent's turn. game.turn=${game.turn} agentColor=${expectedTurn}`,
+      );
+    }
 
     const engine = await this.chessRulesService.requestMove({
       gameId: req.gameId,

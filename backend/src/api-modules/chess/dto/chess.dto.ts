@@ -10,6 +10,22 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+export class CreateGameDto {
+  @ApiProperty({
+    description: 'Agent id that will play as White',
+    example: 'clx1234567890',
+  })
+  @IsString()
+  whiteAgentId: string;
+
+  @ApiProperty({
+    description: 'Agent id that will play as Black',
+    example: 'clx1234567890',
+  })
+  @IsString()
+  blackAgentId: string;
+}
+
 export class MakeMoveDto {
   @ApiProperty({
     description: 'Source square in algebraic notation',

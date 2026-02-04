@@ -18,6 +18,7 @@ import {
 import { ChessRulesService } from '../../service-modules/chess-service/providers/chess-rules.service.js';
 import {
   MakeMoveDto,
+  CreateGameDto,
   LoadPositionDto,
   GetLegalMovesQueryDto,
   GetEngineMovesQueryDto,
@@ -38,13 +39,14 @@ export class ChessController {
 
   @Post('games')
   @ApiOperation({ summary: 'Create a new chess game' })
+  @ApiBody({ type: CreateGameDto })
   @ApiResponse({
     status: 201,
     description: 'Game created successfully',
     type: ChessGameResponseDto,
   })
-  async createGame(): Promise<ChessGameResponseDto> {
-    return this.chessRulesService.createGame();
+  async createGame(@Body() dto: CreateGameDto): Promise<ChessGameResponseDto> {
+    return this.chessRulesService.createGame(dto);
   }
 
   @Get('games/:id')

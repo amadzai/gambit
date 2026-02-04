@@ -35,6 +35,18 @@ export class ChessGameResponseDto {
   status: GameStatus;
 
   @ApiProperty({
+    description: 'Agent id playing as White',
+    example: 'clx1234567890',
+  })
+  whiteAgentId: string;
+
+  @ApiProperty({
+    description: 'Agent id playing as Black',
+    example: 'clx1234567890',
+  })
+  blackAgentId: string;
+
+  @ApiProperty({
     description: 'Game creation timestamp',
   })
   createdAt: Date;
