@@ -34,4 +34,4 @@ import { BigIntSerializerInterceptor } from './interceptors/big-int-serializer.i
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}
