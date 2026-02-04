@@ -22,11 +22,19 @@ export class OpenRouterService {
       throw new Error('OPEN_ROUTER_API_KEY is not set');
     }
 
+    const model = params.model ?? this.defaultModel;
+    const messageChars = params.messages.reduce(
+      (sum, m) => sum + (m.content?.length ?? 0),
+      0,
+    );
     const controller = new AbortController();
     const timeoutMs = params.timeoutMs ?? 15_000;
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
+      this.logger.log(
+        `OpenRouter request start model=${model} messages=${params.messages.length} chars=${messageChars} timeoutMs=${timeoutMs}`,
+      );
       const res = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -34,7 +42,7 @@ export class OpenRouterService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: params.model ?? this.defaultModel,
+          model,
           messages: params.messages,
           temperature: params.temperature ?? 0.2,
           max_tokens: params.maxTokens ?? 80,
@@ -51,11 +59,29 @@ export class OpenRouterService {
         throw new Error(`OpenRouter request failed: HTTP ${res.status}`);
       }
 
-      const data = (await res.json()) as {
-        choices?: Array<{ message?: { content?: string } }>;
+      const requestId =
+        res.headers.get('x-request-id') ??
+        res.headers.get('x-openrouter-request-id') ??
+        res.headers.get('cf-ray') ??
+        '—';
+
+      const data = (await res.json()) as unknown;
+      this.logger.log(`OpenRouter request ok requestId=${requestId}`);
+
+      const typed = data as {
+        choices?: Array<{ message?: { content?: string | null } }>;
+        error?: unknown;
       };
-      const content = data?.choices?.[0]?.message?.content;
-      if (!content) {
+      if (typed?.error) {
+        this.logger.warn(
+          `OpenRouter response included error requestId=${requestId} error=${JSON.stringify(typed.error).slice(0, 500)}`,
+        );
+      }
+      const content = typed?.choices?.[0]?.message?.content;
+      if (typeof content !== 'string' || content.trim() === '') {
+        this.logger.warn(
+          `OpenRouter missing/empty content requestId=${requestId} choices=${typed?.choices?.length ?? 0} raw=${JSON.stringify(data).slice(0, 800)}`,
+        );
         throw new Error('OpenRouter response missing message content');
       }
       return content;

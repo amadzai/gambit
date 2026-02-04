@@ -96,7 +96,17 @@ export class AgentService {
       selectedUci = openingMatch.uci;
       this.logger.log(`Opening match selected uci=${selectedUci}`);
     } else {
-      selectedUci = await this.chooseCandidateWithLlm(agent, engine);
+      try {
+        this.logger.log(
+          `LLM selection start agentId=${agent.id} playstyle=${agent.playstyle} candidates=${engine.candidates.length}`,
+        );
+        selectedUci = await this.chooseCandidateWithLlm(agent, engine);
+        this.logger.log(`LLM selection result uci=${selectedUci ?? '—'}`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`LLM selection error: ${msg}`);
+        selectedUci = null;
+      }
       const allowed = new Set(engine.candidates.map((c) => c.uci));
       if (!selectedUci || !allowed.has(selectedUci)) {
         fallbackUsed = true;
