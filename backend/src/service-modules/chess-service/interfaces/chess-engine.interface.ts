@@ -9,7 +9,7 @@ export interface EngineMoveRequest {
   fen?: string;
   /** Position as PGN (used when gameId not provided and fen not provided). */
   pgn?: string;
-  /** Number of principal variations (candidate moves) to return. Default 3–5. */
+  /** Number of principal variations (candidate moves) to return. Default 10. */
   multiPv?: number;
   /** Analysis time in milliseconds. */
   movetimeMs?: number;
