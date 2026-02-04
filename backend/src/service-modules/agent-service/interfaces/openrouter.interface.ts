@@ -16,4 +16,17 @@ export type OpenRouterChatCompletionParams = {
   maxTokens?: number;
   /** Request timeout in milliseconds. */
   timeoutMs?: number;
+  /**
+   * Reasoning configuration (OpenRouter-normalized).
+   */
+  reasoning?: {
+    /** Reasoning effort (use 'none' to disable reasoning). */
+    effort?: 'xhigh' | 'high' | 'medium' | 'low' | 'minimal' | 'none';
+    /** If true, exclude reasoning tokens from the response. */
+    exclude?: boolean;
+    /** Enable reasoning with default parameters. */
+    enabled?: boolean;
+    /** Max tokens to allocate to reasoning (provider-dependent). */
+    maxTokens?: number;
+  };
 };

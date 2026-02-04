@@ -27,6 +27,7 @@ export class OpenRouterService {
       (sum, m) => sum + (m.content?.length ?? 0),
       0,
     );
+    const reasoning = params.reasoning ?? { effort: 'none' as const };
     const controller = new AbortController();
     const timeoutMs = params.timeoutMs ?? 15_000;
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -46,6 +47,12 @@ export class OpenRouterService {
           messages: params.messages,
           temperature: params.temperature ?? 0.2,
           max_tokens: params.maxTokens ?? 80,
+          reasoning: {
+            effort: reasoning.effort,
+            exclude: reasoning.exclude,
+            enabled: reasoning.enabled,
+            max_tokens: reasoning.maxTokens,
+          },
           stream: false,
         }),
         signal: controller.signal,
