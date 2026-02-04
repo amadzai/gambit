@@ -182,10 +182,8 @@ export class AgentService {
     });
 
     const playstyleGuidance = this.playstyleGuidance(agent.playstyle);
-    const openingHint =
-      agent.opening && agent.opening.trim() !== ''
-        ? `Preferred opening: "${agent.opening.trim()}". If any candidate aligns with this, prefer it (but do not choose a move not in the candidate list).`
-        : 'No preferred opening.';
+    const sideToMove = engine.fen.split(/\s+/)[1] === 'b' ? 'BLACK' : 'WHITE';
+    const allowedUcis = engine.candidates.map((c) => c.uci).join(', ');
     // const personalityHint =
     //   agent.personality && agent.personality.trim() !== ''
     //     ? `Personality: "${agent.personality.trim()}".`
@@ -193,11 +191,12 @@ export class AgentService {
 
     const prompt = [
       `You are a chess agent. Choose exactly ONE move from the provided candidates.`,
+      `It is ${sideToMove} to move.`,
       `Playstyle: ${agent.playstyle}. ${playstyleGuidance}`,
-      openingHint,
       // personalityHint,
-      `Return ONLY valid JSON like: {"uci":"e2e4"}`,
-      `Candidates (choose one of these exact uci strings):`,
+      `You MUST choose by index. Return ONLY valid JSON like: {"pick": 3}`,
+      `Allowed UCI moves are: ${allowedUcis}`,
+      `Candidates (1 = best by engine, higher = weaker):`,
       JSON.stringify(enriched),
     ].join('\n');
 
@@ -206,7 +205,7 @@ export class AgentService {
         {
           role: 'system',
           content:
-            'You must output only JSON. Do not include code fences or extra text.',
+            'You must output only JSON. Do not include code fences or extra text. Output must be like {"pick": <number>}.',
         },
         { role: 'user', content: prompt },
       ],
@@ -215,8 +214,12 @@ export class AgentService {
       timeoutMs: 12_000,
     });
 
-    const parsed = this.parseJsonObject<{ uci?: string }>(content);
-    const uci = parsed?.uci?.trim();
+    const parsed = this.parseJsonObject<{ pick?: number }>(content);
+    const pick = parsed?.pick;
+    if (typeof pick !== 'number' || !Number.isFinite(pick)) return null;
+    const idx = Math.floor(pick) - 1;
+    if (idx < 0 || idx >= engine.candidates.length) return null;
+    const uci = engine.candidates[idx]?.uci;
     return uci && UCI_REGEX.test(uci.toLowerCase()) ? uci.toLowerCase() : null;
   }
 
