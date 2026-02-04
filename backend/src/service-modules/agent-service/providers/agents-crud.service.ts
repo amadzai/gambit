@@ -1,17 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { Agent, Playstyle } from '../../../../generated/prisma/client.js';
-
-export type CreateAgentInput = {
-  name: string;
-  playstyle: Playstyle;
-  opening?: string | null;
-  personality?: string | null;
-  profileImage?: string | null;
-  elo?: number;
-};
-
-export type UpdateAgentInput = Partial<CreateAgentInput>;
+import { Agent } from '../../../../generated/prisma/client.js';
+import type {
+  CreateAgentInput,
+  UpdateAgentInput,
+} from '../interfaces/agents-crud.interface.js';
 
 @Injectable()
 export class AgentsCrudService {

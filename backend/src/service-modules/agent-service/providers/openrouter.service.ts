@@ -1,17 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-
-export type OpenRouterChatMessage = {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-};
-
-export type OpenRouterChatCompletionParams = {
-  model?: string;
-  messages: OpenRouterChatMessage[];
-  temperature?: number;
-  maxTokens?: number;
-  timeoutMs?: number;
-};
+import type { OpenRouterChatCompletionParams } from '../interfaces/openrouter.interface.js';
 
 @Injectable()
 export class OpenRouterService {

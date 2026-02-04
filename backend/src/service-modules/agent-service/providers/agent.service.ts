@@ -8,35 +8,20 @@ import { Chess, Square } from 'chess.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ChessRulesService } from '../../chess-service/providers/chess-rules.service.js';
 import { EngineMoveResponse } from '../../chess-service/interfaces/chess-engine.interface.js';
-import {
-  MakeMoveDto,
-  MoveResult,
-} from '../../chess-service/interfaces/chess-rules.interface.js';
+import { MakeMoveDto } from '../../chess-service/interfaces/chess-rules.interface.js';
 import { OpenRouterService } from './openrouter.service.js';
 import {
   Agent,
   Color,
   Playstyle,
 } from '../../../../generated/prisma/client.js';
+import type {
+  AgentMoveRequest,
+  AgentMoveResponse,
+} from '../interfaces/agent-service.interface.js';
 
 const DEFAULT_MULTI_PV = 10;
 const UCI_REGEX = /^[a-h][1-8][a-h][1-8][qrbn]?$/;
-
-export type AgentMoveRequest = {
-  gameId: string;
-  multiPv?: number;
-  movetimeMs?: number;
-  depth?: number;
-};
-
-export type AgentMoveResponse = {
-  agent: Agent;
-  engine: EngineMoveResponse;
-  selectedUci: string;
-  appliedMove: MakeMoveDto;
-  moveResult: MoveResult;
-  fallbackUsed: boolean;
-};
 
 @Injectable()
 export class AgentService {
