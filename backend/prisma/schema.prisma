@@ -20,12 +20,19 @@ enum GameStatus {
   RESIGNED
 }
 
+enum Winner {
+  WHITE
+  BLACK
+  DRAW
+}
+
 model ChessGame {
   id     String     @id @default(cuid())
   fen    String
   pgn    String     @default("")
   turn   Color
   status GameStatus
+  winner Winner?
 
   whiteAgentId String
   blackAgentId String
