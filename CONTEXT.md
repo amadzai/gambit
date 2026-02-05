@@ -96,13 +96,15 @@ chess-service/
 
 1. Backend agent calls `ChessRulesService.requestMove(...)` with the current position (via `gameId` / `fen` / `pgn`) and agent strength (ELO/skill)
 2. `ChessRulesService` resolves the position to a FEN and forwards it to `ChessEngineService` (Stockfish)
-3. Stockfish generates **N candidate moves** using `MultiPV` at the requested strength
-4. The backend agent calls OpenRouter (`z-ai/glm-4.7-flash`) with the candidate list + agent metadata (playstyle/personality/opening) and asks the LLM to pick **one** candidate
-5. Agent selects a candidate **UCI** move (e.g. `e2e4`, `e7e8q`), converts it to `{ from, to, promotion? }`, then calls `ChessRulesService.makeMove(...)` to validate + persist the move (updates `fen`/`pgn` in DB)
-   - If the LLM response is invalid/unparseable, we fall back to Stockfish’s top candidate
+3. Stockfish generates **N candidate moves** using `MultiPV` (default **10**) at the requested strength
+4. If the agent has a preferred opening in **UCI** (e.g. `e2e4`) and that move is present in the candidate list, we pick it immediately (no LLM call)
+5. Otherwise, the backend agent calls OpenRouter (`z-ai/glm-4.7-flash`) with the candidate list + agent metadata (playstyle/personality) and asks the LLM to pick **one** candidate **by index** (e.g. `{"pick": 3}`)
+6. Agent selects the candidate **UCI** move, converts it to `{ from, to, promotion? }`, then calls `ChessRulesService.makeMove(...)` to validate + persist the move (updates `fen`/`pgn` in DB)
+   - If the LLM response is invalid/unparseable/out of range, we fall back to Stockfish’s top candidate
 
 Notes:
 - We keep things simple by assuming **only 1 live match at a time**, so a single Stockfish process with serialized requests is sufficient.
+- OpenRouter calls default to `reasoning.effort: "none"` to avoid spending output tokens on reasoning traces (we only want the final JSON).
 
 ### Chess Rules Service (chess.js)
 
@@ -155,7 +157,25 @@ Notes:
 - Swagger UI is available at `/api` and the OpenAPI JSON is at `/api-json`.
 - Most chess endpoints are backed by `ChessRulesService`.
 - The Stockfish integration is internal (used via `ChessRulesService.requestMove(...)`), but we expose a **debug** endpoint to inspect candidates:
-  - `GET /chess/games/:id/engine-moves?multiPv=5&elo=1500&movetimeMs=200`
+  - `GET /chess/games/:id/engine-moves?multiPv=10&elo=1500&movetimeMs=200`
+
+### Agents Controller (`/backend/src/api-modules/agents/`)
+
+All agent-related endpoints route through:
+
+```
+/agents/*
+```
+
+Key endpoints:
+- `POST /agents` create agent
+- `GET /agents` list agents
+- `GET /agents/:id` get agent
+- `PUT /agents/:id` update agent
+- `POST /agents/:id/move` make a move for that agent in a specific game
+
+Notes:
+- `/agents/:id/move` validates that the agent is assigned to the game (`whiteAgentId` / `blackAgentId`) and that it is that agent’s turn.
 
 ---
 
@@ -177,21 +197,55 @@ enum GameStatus {
   RESIGNED
 }
 
+enum Winner {
+  WHITE
+  BLACK
+  DRAW
+}
+
 model ChessGame {
   id        String     @id @default(cuid())
   fen       String     // Current board state
-  pgn       String     @default("") // Move history (preferred for reconstructing full state)
+  pgn       String     @default("") // Move history (movetext only; headers stripped)
   turn      Color      // Whose turn
   status    GameStatus // Game state
+  winner    Winner?    // Winner (set on terminal states)
+
+  whiteAgentId String
+  blackAgentId String
+
+  whiteAgent Agent @relation("WhiteGames", fields: [whiteAgentId], references: [id])
+  blackAgent Agent @relation("BlackGames", fields: [blackAgentId], references: [id])
 
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+}
+
+enum Playstyle {
+  AGGRESSIVE
+  DEFENSIVE
+  POSITIONAL
+}
+
+model Agent {
+  id           String    @id @default(cuid())
+  name         String
+  playstyle    Playstyle
+  opening      String?
+  personality  String?
+  profileImage String?
+  elo          Int       @default(1000)
+
+  whiteGames ChessGame[] @relation("WhiteGames")
+  blackGames ChessGame[] @relation("BlackGames")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 ```
 
 ### Planned Models
 
-- `Agent` - AI agent configuration and stats
 - `Match` - Match records between agents
 - `Move` - Individual move history
 
