@@ -184,6 +184,7 @@ export class AgentService {
     const playstyleGuidance = this.playstyleGuidance(agent.playstyle);
     const sideToMove = engine.fen.split(/\s+/)[1] === 'b' ? 'BLACK' : 'WHITE';
     const allowedUcis = engine.candidates.map((c) => c.uci).join(', ');
+    const maxPick = engine.candidates.length;
     // const personalityHint =
     //   agent.personality && agent.personality.trim() !== ''
     //     ? `Personality: "${agent.personality.trim()}".`
@@ -194,7 +195,10 @@ export class AgentService {
       `It is ${sideToMove} to move.`,
       `Playstyle: ${agent.playstyle}. ${playstyleGuidance}`,
       // personalityHint,
-      `You MUST choose by index. Return ONLY valid JSON like: {"pick": 3}`,
+      `You MUST choose by index from the candidate list.`,
+      `Valid pick values are integers from 1 to ${maxPick} (inclusive).`,
+      `Do NOT output a UCI move. Do NOT invent a new move. If unsure, pick 1.`,
+      `Return ONLY valid JSON like: {"pick": 3}`,
       `Allowed UCI moves are: ${allowedUcis}`,
       `Candidates (1 = best by engine, higher = weaker):`,
       JSON.stringify(enriched),
