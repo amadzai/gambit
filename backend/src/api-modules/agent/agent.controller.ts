@@ -17,22 +17,22 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AgentService } from '../../service-modules/agent-service/providers/agent.service.js';
-import { AgentsCrudService } from '../../service-modules/agent-service/providers/agents-crud.service.js';
+import { AgentCrudService } from '../../service-modules/agent-service/providers/agent-crud.service.js';
 import {
   AgentMoveDto,
   CreateAgentDto,
   UpdateAgentDto,
-} from './dto/agents.dto.js';
+} from './dto/agent.dto.js';
 import {
   AgentMoveResponseDto,
   AgentResponseDto,
-} from './dto/agents.response.dto.js';
+} from './dto/agent.response.dto.js';
 
-@ApiTags('Agents')
-@Controller('agents')
-export class AgentsController {
+@ApiTags('Agent')
+@Controller('agent')
+export class AgentController {
   constructor(
-    private readonly agentsCrudService: AgentsCrudService,
+    private readonly agentCrudService: AgentCrudService,
     private readonly agentService: AgentService,
   ) {}
 
@@ -45,7 +45,7 @@ export class AgentsController {
     type: AgentResponseDto,
   })
   async create(@Body() dto: CreateAgentDto): Promise<AgentResponseDto> {
-    return this.agentsCrudService.create(dto);
+    return this.agentCrudService.create(dto);
   }
 
   @Put(':id')
@@ -72,7 +72,7 @@ export class AgentsController {
     ) {
       throw new BadRequestException('No fields provided to update');
     }
-    return this.agentsCrudService.update(id, {
+    return this.agentCrudService.update(id, {
       name: dto.name,
       playstyle: dto.playstyle,
       opening: dto.opening,
@@ -90,7 +90,7 @@ export class AgentsController {
     type: [AgentResponseDto],
   })
   async list(): Promise<AgentResponseDto[]> {
-    return this.agentsCrudService.list();
+    return this.agentCrudService.list();
   }
 
   @Get(':id')
@@ -103,7 +103,7 @@ export class AgentsController {
   })
   @ApiResponse({ status: 404, description: 'Agent not found' })
   async get(@Param('id') id: string): Promise<AgentResponseDto> {
-    return this.agentsCrudService.get(id);
+    return this.agentCrudService.get(id);
   }
 
   @Post(':id/move')
