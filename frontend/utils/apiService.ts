@@ -3,7 +3,6 @@ import type {
   ChessGame,
   EngineMovesQuery,
   EngineMovesResponse,
-  GameStatusResponse,
   MakeMovePayload,
   MoveResultResponse,
 } from '@/types/chess';
@@ -28,11 +27,6 @@ export const apiService = {
       return res.data;
     },
 
-    getGameStatus: async (gameId: string): Promise<GameStatusResponse> => {
-      const res = await api.get<GameStatusResponse>(`/chess/games/${gameId}/status`);
-      return res.data;
-    },
-
     makeMove: async (
       gameId: string,
       payload: MakeMovePayload,
@@ -48,11 +42,6 @@ export const apiService = {
       const res = await api.get<EngineMovesResponse>(`/chess/games/${gameId}/engine-moves`, {
         params,
       });
-      return res.data;
-    },
-
-    resign: async (gameId: string): Promise<ChessGame> => {
-      const res = await api.post<ChessGame>(`/chess/games/${gameId}/resign`);
       return res.data;
     },
   },

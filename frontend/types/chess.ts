@@ -47,16 +47,6 @@ export type MoveResultResponse = {
   isGameOver: boolean;
 };
 
-export type GameStatusResponse = {
-  game: ChessGame;
-  isCheck: boolean;
-  isCheckmate: boolean;
-  isStalemate: boolean;
-  isDraw: boolean;
-  isGameOver: boolean;
-  legalMoveCount: number;
-};
-
 export type EngineCandidateMove = {
   uci: string; // e.g. "e2e4", "e7e8q"
   multipv: number; // 1-based

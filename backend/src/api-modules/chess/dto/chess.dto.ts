@@ -59,28 +59,6 @@ export class MakeMoveDto {
   promotion?: 'q' | 'r' | 'b' | 'n';
 }
 
-export class LoadPositionDto {
-  @ApiProperty({
-    description: 'FEN string representing the board position',
-    example: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1',
-  })
-  @IsString()
-  fen: string;
-}
-
-export class GetLegalMovesQueryDto {
-  @ApiPropertyOptional({
-    description: 'Filter legal moves by source square',
-    example: 'e2',
-  })
-  @IsOptional()
-  @IsString()
-  @Matches(/^[a-h][1-8]$/, {
-    message: 'square must be a valid square (e.g., e2, d4)',
-  })
-  square?: string;
-}
-
 export class GetEngineMovesQueryDto {
   @ApiPropertyOptional({
     description: 'Number of candidate moves (MultiPV)',

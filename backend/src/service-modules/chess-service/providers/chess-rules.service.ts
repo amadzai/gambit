@@ -13,7 +13,6 @@ import {
   Winner,
 } from '../../../../generated/prisma/client.js';
 import {
-  LegalMove,
   MakeMoveDto,
   MoveResult,
 } from '../interfaces/chess-rules.interface.js';
@@ -182,119 +181,6 @@ export class ChessRulesService {
       `requestMove returning ${result.candidates.length} candidate(s)`,
     );
     return result;
-  }
-
-  /**
-   * Get all legal moves for the current position
-   * Optionally filter by square (e.g., get legal moves for piece on 'e2')
-   */
-  async getLegalMoves(gameId: string, square?: string): Promise<LegalMove[]> {
-    const game = await this.getGame(gameId);
-    const chess = new Chess(game.fen);
-
-    const moves = square
-      ? chess.moves({ square: square as Square, verbose: true })
-      : chess.moves({ verbose: true });
-
-    return moves.map((move) => ({
-      from: move.from,
-      to: move.to,
-      san: move.san,
-      piece: move.piece,
-      captured: move.captured,
-      promotion: move.promotion,
-      flags: move.flags,
-    }));
-  }
-
-  /**
-   * Validate if a move is legal without executing it
-   */
-  async validateMove(gameId: string, moveDto: MakeMoveDto): Promise<boolean> {
-    const game = await this.getGame(gameId);
-    const chess = new Chess(game.fen);
-
-    const legalMoves = chess.moves({ verbose: true });
-    return legalMoves.some(
-      (move) =>
-        move.from === moveDto.from &&
-        move.to === moveDto.to &&
-        (moveDto.promotion ? move.promotion === moveDto.promotion : true),
-    );
-  }
-
-  /**
-   * Get current game status and metadata
-   */
-  async getGameStatus(gameId: string): Promise<{
-    game: ChessGame;
-    isCheck: boolean;
-    isCheckmate: boolean;
-    isStalemate: boolean;
-    isDraw: boolean;
-    isGameOver: boolean;
-    legalMoveCount: number;
-  }> {
-    const game = await this.getGame(gameId);
-    const chess = new Chess(game.fen);
-
-    return {
-      game,
-      isCheck: chess.isCheck(),
-      isCheckmate: chess.isCheckmate(),
-      isStalemate: chess.isStalemate(),
-      isDraw: chess.isDraw(),
-      isGameOver: chess.isGameOver(),
-      legalMoveCount: chess.moves().length,
-    };
-  }
-
-  /**
-   * Load a specific FEN position into a game (useful for testing)
-   * Note: This clears the PGN history since we're loading an arbitrary position
-   */
-  async loadPosition(gameId: string, fen: string): Promise<ChessGame> {
-    await this.getGame(gameId);
-
-    let chess: Chess;
-    try {
-      chess = new Chess(fen);
-    } catch {
-      throw new BadRequestException(`Invalid FEN: ${fen}`);
-    }
-
-    const turn = chess.turn() === 'w' ? Color.WHITE : Color.BLACK;
-    const status = this.determineGameStatus(chess);
-
-    return this.prisma.chessGame.update({
-      where: { id: gameId },
-      data: {
-        fen: chess.fen(),
-        pgn: '',
-        turn,
-        status,
-      },
-    });
-  }
-
-  /**
-   * Resign a game
-   */
-  async resignGame(gameId: string): Promise<ChessGame> {
-    const game = await this.getGame(gameId);
-
-    if (game.status !== GameStatus.ACTIVE) {
-      throw new BadRequestException(
-        `Game is not active. Status: ${game.status}`,
-      );
-    }
-
-    return this.prisma.chessGame.update({
-      where: { id: gameId },
-      data: {
-        status: GameStatus.RESIGNED,
-      },
-    });
   }
 
   /**
