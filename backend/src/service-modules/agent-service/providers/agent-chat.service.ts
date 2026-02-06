@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { OpenRouterChatCompletionParams } from '../interfaces/openrouter.interface.js';
+import type { OpenRouterChatCompletionParams } from '../interfaces/agent-chat.interface.js';
 
 @Injectable()
-export class OpenRouterService {
-  private readonly logger = new Logger(OpenRouterService.name);
+export class AgentChatService {
+  private readonly logger = new Logger(AgentChatService.name);
 
   private readonly apiKey = process.env.OPEN_ROUTER_API_KEY;
   private readonly baseUrl =

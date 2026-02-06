@@ -9,7 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { ChessRulesService } from '../../chess-service/providers/chess-rules.service.js';
 import { EngineMoveResponse } from '../../chess-service/interfaces/chess-engine.interface.js';
 import { MakeMove } from '../../chess-service/interfaces/chess-rules.interface.js';
-import { OpenRouterService } from './openrouter.service.js';
+import { AgentChatService } from './agent-chat.service.js';
 import {
   Agent,
   Color,
@@ -18,7 +18,7 @@ import {
 import type {
   AgentMoveRequest,
   AgentMoveResponse,
-} from '../interfaces/agent-service.interface.js';
+} from '../interfaces/agent-chess.interface.js';
 
 const DEFAULT_MULTI_PV = 10;
 const UCI_REGEX = /^[a-h][1-8][a-h][1-8][qrbn]?$/;
@@ -30,7 +30,7 @@ export class AgentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly chessRulesService: ChessRulesService,
-    private readonly openRouterService: OpenRouterService,
+    private readonly agentChatService: AgentChatService,
   ) {}
 
   /**
@@ -212,7 +212,7 @@ export class AgentService {
       JSON.stringify(enriched),
     ].join('\n');
 
-    const content = await this.openRouterService.createChatCompletion({
+    const content = await this.agentChatService.createChatCompletion({
       messages: [
         {
           role: 'system',

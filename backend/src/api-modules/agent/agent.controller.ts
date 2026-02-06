@@ -15,7 +15,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { AgentService } from '../../service-modules/agent-service/providers/agent.service.js';
+import { AgentService } from '../../service-modules/agent-service/providers/agent-chess.service.js';
 import { AgentCrudService } from '../../service-modules/agent-service/providers/agent-crud.service.js';
 import {
   AgentMoveDto,
