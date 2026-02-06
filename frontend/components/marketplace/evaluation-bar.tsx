@@ -1,0 +1,50 @@
+interface EvaluationBarProps {
+  evaluation: number;
+}
+
+export function EvaluationBar({ evaluation }: EvaluationBarProps) {
+  // evaluation range typically -10 to +10, map to 0-100
+  const normalized = (evaluation + 10) / 20;
+  const whiteAdvantage = Math.max(0, Math.min(100, normalized * 100));
+
+  return (
+    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+      <h3 className="text-sm font-medium text-slate-400 mb-4">Evaluation</h3>
+
+      <div className="relative h-[600px] bg-slate-800 rounded-lg overflow-hidden">
+        <div
+          className="absolute top-0 left-0 right-0 bg-slate-950 transition-all duration-500"
+          style={{ height: `${100 - whiteAdvantage}%` }}
+        />
+        <div
+          className="absolute bottom-0 left-0 right-0 bg-slate-100 transition-all duration-500"
+          style={{ height: `${whiteAdvantage}%` }}
+        />
+        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-600 -translate-y-1/2" />
+        <div
+          className="absolute left-1/2 transition-all duration-500"
+          style={{
+            top: `${100 - whiteAdvantage}%`,
+            transform: "translate(-50%, -50%)",
+          }}
+        >
+          <div className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-xs font-bold text-white whitespace-nowrap">
+            {evaluation > 0 ? "+" : ""}
+            {evaluation.toFixed(1)}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-slate-100" />
+          <span className="text-xs text-slate-400">White Advantage</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-slate-950 border border-slate-700" />
+          <span className="text-xs text-slate-400">Black Advantage</span>
+        </div>
+      </div>
+    </div>
+  );
+}

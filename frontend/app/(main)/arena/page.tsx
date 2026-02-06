@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChessBoard } from "@/components/arena/chess-board";
+import { LiveChessBoard } from "@/components/arena/chess-board";
 import { AgentPanel } from "@/components/arena/agent-panel";
 import { MatchHeader } from "@/components/arena/match-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +23,7 @@ const DEMO_FENS = [
   "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
 ];
 
-export default function ArenaPage() {
+function ArenaContent() {
   const searchParams = useSearchParams();
   const challengeId = searchParams.get("challenge");
 
@@ -81,7 +81,7 @@ export default function ArenaPage() {
 
           {/* Chessboard */}
           <div className="order-1 lg:order-2 space-y-4">
-            <ChessBoard position={boardPosition} onMove={handleMove} />
+            <LiveChessBoard position={boardPosition} onMove={handleMove} />
 
             {status === "pending" && (
               <div className="flex justify-center">
@@ -144,5 +144,13 @@ export default function ArenaPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ArenaPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-8">Loading...</div>}>
+      <ArenaContent />
+    </Suspense>
   );
 }
