@@ -112,36 +112,6 @@ export class MoveResultResponseDto {
     type: MoveDto,
   })
   move?: MoveDto;
-
-  @ApiProperty({
-    description: 'Whether the opponent is in check',
-    example: false,
-  })
-  isCheck: boolean;
-
-  @ApiProperty({
-    description: 'Whether the game ended in checkmate',
-    example: false,
-  })
-  isCheckmate: boolean;
-
-  @ApiProperty({
-    description: 'Whether the game ended in stalemate',
-    example: false,
-  })
-  isStalemate: boolean;
-
-  @ApiProperty({
-    description: 'Whether the game ended in a draw',
-    example: false,
-  })
-  isDraw: boolean;
-
-  @ApiProperty({
-    description: 'Whether the game is over',
-    example: false,
-  })
-  isGameOver: boolean;
 }
 
 export class EngineCandidateMoveResponseDto {

@@ -14,7 +14,7 @@ export interface MakeMove {
 }
 
 /**
- * Result of executing a move: updated game, move details, and game-over flags.
+ * Result of executing a move: updated game and move details.
  */
 export interface MoveResult {
   /** Whether the move was applied successfully. */
@@ -23,14 +23,4 @@ export interface MoveResult {
   game: ChessGame;
   /** The move that was made (from chess.js). */
   move?: Move;
-  /** Whether the opponent is in check. */
-  isCheck: boolean;
-  /** Whether the game ended in checkmate. */
-  isCheckmate: boolean;
-  /** Whether the game ended in stalemate. */
-  isStalemate: boolean;
-  /** Whether the game ended in a draw. */
-  isDraw: boolean;
-  /** Whether the game is over (checkmate, stalemate, draw, or resigned). */
-  isGameOver: boolean;
 }

@@ -124,11 +124,6 @@ export class ChessRulesService {
       success: true,
       game: updatedGame,
       move,
-      isCheck: chess.isCheck(),
-      isCheckmate: chess.isCheckmate(),
-      isStalemate: chess.isStalemate(),
-      isDraw: chess.isDraw(),
-      isGameOver: chess.isGameOver(),
     };
   }
 
