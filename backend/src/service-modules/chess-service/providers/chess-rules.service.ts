@@ -35,18 +35,34 @@ export class ChessRulesService {
     whiteAgentId: string;
     blackAgentId: string;
   }): Promise<ChessGame> {
+    this.logger.log(
+      `Creating Chess Game with White: ${input.whiteAgentId} and Black: ${input.blackAgentId}`,
+    );
+
     const chess = new Chess();
-    const game = await this.prisma.chessGame.create({
-      data: {
-        fen: chess.fen(),
-        turn: Color.WHITE,
-        status: GameStatus.ACTIVE,
-        whiteAgentId: input.whiteAgentId,
-        blackAgentId: input.blackAgentId,
-      },
-    });
-    this.logger.log(`Game created: ${game.id}`);
-    return game;
+
+    try {
+      const game = await this.prisma.chessGame.create({
+        data: {
+          fen: chess.fen(),
+          turn: Color.WHITE,
+          status: GameStatus.ACTIVE,
+          whiteAgentId: input.whiteAgentId,
+          blackAgentId: input.blackAgentId,
+        },
+      });
+
+      this.logger.log(`Game created: ${game.id}`);
+
+      return game;
+    } catch (error) {
+      this.logger.error(
+        `Failed to Create Chess Game for White: ${input.whiteAgentId} and Black: ${input.blackAgentId}`,
+        error,
+      );
+
+      throw error;
+    }
   }
 
   /**
