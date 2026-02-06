@@ -12,11 +12,7 @@ import {
   ChessGame,
   Winner,
 } from '../../../../generated/prisma/client.js';
-import {
-  LegalMove,
-  MakeMoveDto,
-  MoveResult,
-} from '../interfaces/chess-rules.interface.js';
+import { MakeMove, MoveResult } from '../interfaces/chess-rules.interface.js';
 import {
   EngineMoveRequest,
   EngineMoveResponse,
@@ -39,18 +35,34 @@ export class ChessRulesService {
     whiteAgentId: string;
     blackAgentId: string;
   }): Promise<ChessGame> {
+    this.logger.log(
+      `Creating Chess Game with White: ${input.whiteAgentId} and Black: ${input.blackAgentId}`,
+    );
+
     const chess = new Chess();
-    const game = await this.prisma.chessGame.create({
-      data: {
-        fen: chess.fen(),
-        turn: Color.WHITE,
-        status: GameStatus.ACTIVE,
-        whiteAgentId: input.whiteAgentId,
-        blackAgentId: input.blackAgentId,
-      },
-    });
-    this.logger.log(`Game created: ${game.id}`);
-    return game;
+
+    try {
+      const game = await this.prisma.chessGame.create({
+        data: {
+          fen: chess.fen(),
+          turn: Color.WHITE,
+          status: GameStatus.ACTIVE,
+          whiteAgentId: input.whiteAgentId,
+          blackAgentId: input.blackAgentId,
+        },
+      });
+
+      this.logger.log(`Game created: ${game.id}`);
+
+      return game;
+    } catch (error) {
+      this.logger.error(
+        `Failed to Create Chess Game for White: ${input.whiteAgentId} and Black: ${input.blackAgentId}`,
+        error,
+      );
+
+      throw error;
+    }
   }
 
   /**
@@ -72,8 +84,10 @@ export class ChessRulesService {
    * Make a move in a game
    * Validates the move, updates the game state, and returns the result
    */
-  async makeMove(gameId: string, moveDto: MakeMoveDto): Promise<MoveResult> {
-    this.logger.log(`makeMove gameId=${gameId} ${moveDto.from}→${moveDto.to}`);
+  async makeMove(gameId: string, makeMove: MakeMove): Promise<MoveResult> {
+    this.logger.log(
+      `makeMove gameId=${gameId} ${makeMove.from}→${makeMove.to}`,
+    );
     const game = await this.getGame(gameId);
 
     if (game.status !== GameStatus.ACTIVE) {
@@ -87,19 +101,19 @@ export class ChessRulesService {
     let move: Move;
     try {
       move = chess.move({
-        from: moveDto.from as Square,
-        to: moveDto.to as Square,
-        promotion: moveDto.promotion,
+        from: makeMove.from as Square,
+        to: makeMove.to as Square,
+        promotion: makeMove.promotion,
       });
     } catch {
       throw new BadRequestException(
-        `Invalid move: ${moveDto.from} to ${moveDto.to}`,
+        `Invalid move: ${makeMove.from} to ${makeMove.to}`,
       );
     }
 
     if (!move) {
       throw new BadRequestException(
-        `Invalid move: ${moveDto.from} to ${moveDto.to}`,
+        `Invalid move: ${makeMove.from} to ${makeMove.to}`,
       );
     }
 
@@ -126,11 +140,6 @@ export class ChessRulesService {
       success: true,
       game: updatedGame,
       move,
-      isCheck: chess.isCheck(),
-      isCheckmate: chess.isCheckmate(),
-      isStalemate: chess.isStalemate(),
-      isDraw: chess.isDraw(),
-      isGameOver: chess.isGameOver(),
     };
   }
 
@@ -154,17 +163,6 @@ export class ChessRulesService {
       }
       const chess = this.loadGameState(game);
       fen = chess.fen();
-    } else if (request.fen) {
-      const chess = new Chess(request.fen);
-      fen = chess.fen();
-    } else if (request.pgn && request.pgn.trim() !== '') {
-      const chess = new Chess();
-      try {
-        chess.loadPgn(request.pgn);
-      } catch {
-        throw new BadRequestException('Invalid PGN');
-      }
-      fen = chess.fen();
     } else {
       throw new BadRequestException(
         'Provide gameId, fen, or pgn to request moves',
@@ -174,127 +172,12 @@ export class ChessRulesService {
     const result = await this.chessEngineService.getCandidateMoves(fen, {
       multiPv: request.multiPv,
       movetimeMs: request.movetimeMs,
-      depth: request.depth,
       elo: request.elo,
-      skill: request.skill,
     });
     this.logger.log(
       `requestMove returning ${result.candidates.length} candidate(s)`,
     );
     return result;
-  }
-
-  /**
-   * Get all legal moves for the current position
-   * Optionally filter by square (e.g., get legal moves for piece on 'e2')
-   */
-  async getLegalMoves(gameId: string, square?: string): Promise<LegalMove[]> {
-    const game = await this.getGame(gameId);
-    const chess = new Chess(game.fen);
-
-    const moves = square
-      ? chess.moves({ square: square as Square, verbose: true })
-      : chess.moves({ verbose: true });
-
-    return moves.map((move) => ({
-      from: move.from,
-      to: move.to,
-      san: move.san,
-      piece: move.piece,
-      captured: move.captured,
-      promotion: move.promotion,
-      flags: move.flags,
-    }));
-  }
-
-  /**
-   * Validate if a move is legal without executing it
-   */
-  async validateMove(gameId: string, moveDto: MakeMoveDto): Promise<boolean> {
-    const game = await this.getGame(gameId);
-    const chess = new Chess(game.fen);
-
-    const legalMoves = chess.moves({ verbose: true });
-    return legalMoves.some(
-      (move) =>
-        move.from === moveDto.from &&
-        move.to === moveDto.to &&
-        (moveDto.promotion ? move.promotion === moveDto.promotion : true),
-    );
-  }
-
-  /**
-   * Get current game status and metadata
-   */
-  async getGameStatus(gameId: string): Promise<{
-    game: ChessGame;
-    isCheck: boolean;
-    isCheckmate: boolean;
-    isStalemate: boolean;
-    isDraw: boolean;
-    isGameOver: boolean;
-    legalMoveCount: number;
-  }> {
-    const game = await this.getGame(gameId);
-    const chess = new Chess(game.fen);
-
-    return {
-      game,
-      isCheck: chess.isCheck(),
-      isCheckmate: chess.isCheckmate(),
-      isStalemate: chess.isStalemate(),
-      isDraw: chess.isDraw(),
-      isGameOver: chess.isGameOver(),
-      legalMoveCount: chess.moves().length,
-    };
-  }
-
-  /**
-   * Load a specific FEN position into a game (useful for testing)
-   * Note: This clears the PGN history since we're loading an arbitrary position
-   */
-  async loadPosition(gameId: string, fen: string): Promise<ChessGame> {
-    await this.getGame(gameId);
-
-    let chess: Chess;
-    try {
-      chess = new Chess(fen);
-    } catch {
-      throw new BadRequestException(`Invalid FEN: ${fen}`);
-    }
-
-    const turn = chess.turn() === 'w' ? Color.WHITE : Color.BLACK;
-    const status = this.determineGameStatus(chess);
-
-    return this.prisma.chessGame.update({
-      where: { id: gameId },
-      data: {
-        fen: chess.fen(),
-        pgn: '',
-        turn,
-        status,
-      },
-    });
-  }
-
-  /**
-   * Resign a game
-   */
-  async resignGame(gameId: string): Promise<ChessGame> {
-    const game = await this.getGame(gameId);
-
-    if (game.status !== GameStatus.ACTIVE) {
-      throw new BadRequestException(
-        `Game is not active. Status: ${game.status}`,
-      );
-    }
-
-    return this.prisma.chessGame.update({
-      where: { id: gameId },
-      data: {
-        status: GameStatus.RESIGNED,
-      },
-    });
   }
 
   /**

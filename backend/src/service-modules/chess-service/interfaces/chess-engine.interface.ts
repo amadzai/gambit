@@ -5,20 +5,12 @@
 export interface EngineMoveRequest {
   /** Load position from this game (pgn if present, else fen). */
   gameId?: string;
-  /** Position as FEN (used when gameId not provided, or overrides game position). */
-  fen?: string;
-  /** Position as PGN (used when gameId not provided and fen not provided). */
-  pgn?: string;
   /** Number of principal variations (candidate moves) to return. Default 10. */
   multiPv?: number;
   /** Analysis time in milliseconds. */
   movetimeMs?: number;
-  /** Analysis depth (alternative to movetimeMs). */
-  depth?: number;
-  /** Agent ELO for strength (mapped to Stockfish Skill Level / UCI_Elo). */
+  /** Agent ELO for strength (mapped to Stockfish UCI_Elo). */
   elo?: number;
-  /** Direct Stockfish skill level 0–20 (overrides elo if both provided). */
-  skill?: number;
 }
 
 /**

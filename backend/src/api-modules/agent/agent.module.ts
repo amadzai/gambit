@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { AgentServiceModule } from '../../service-modules/agent-service/agent-service.module.js';
-import { AgentsController } from './agents.controller.js';
+import { AgentController } from './agent.controller.js';
 
 @Module({
   imports: [AgentServiceModule],
-  controllers: [AgentsController],
+  controllers: [AgentController],
 })
-export class AgentsModule {}
+export class AgentModule {}

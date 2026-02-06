@@ -59,28 +59,6 @@ export class MakeMoveDto {
   promotion?: 'q' | 'r' | 'b' | 'n';
 }
 
-export class LoadPositionDto {
-  @ApiProperty({
-    description: 'FEN string representing the board position',
-    example: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1',
-  })
-  @IsString()
-  fen: string;
-}
-
-export class GetLegalMovesQueryDto {
-  @ApiPropertyOptional({
-    description: 'Filter legal moves by source square',
-    example: 'e2',
-  })
-  @IsOptional()
-  @IsString()
-  @Matches(/^[a-h][1-8]$/, {
-    message: 'square must be a valid square (e.g., e2, d4)',
-  })
-  square?: string;
-}
-
 export class GetEngineMovesQueryDto {
   @ApiPropertyOptional({
     description: 'Number of candidate moves (MultiPV)',
@@ -106,17 +84,6 @@ export class GetEngineMovesQueryDto {
   elo?: number;
 
   @ApiPropertyOptional({
-    description: 'Stockfish skill level 0–20 (overrides elo if both provided)',
-    example: 10,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  @Max(20)
-  skill?: number;
-
-  @ApiPropertyOptional({
     description: 'Analysis time in milliseconds',
     example: 200,
   })
@@ -126,15 +93,4 @@ export class GetEngineMovesQueryDto {
   @Min(50)
   @Max(60000)
   movetimeMs?: number;
-
-  @ApiPropertyOptional({
-    description: 'Analysis depth (alternative to movetimeMs)',
-    example: 10,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(50)
-  depth?: number;
 }
