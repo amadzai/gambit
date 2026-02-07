@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import { X, Sparkles, ChevronDown } from 'lucide-react';
 import axios from 'axios';
+import { useWriteContract, usePublicClient } from 'wagmi';
 import type { AgentPlaystyle, Agent } from '@/types/agent';
 import { apiService } from '@/utils/apiService';
 import { useWallet } from '@/hooks/useWallet';
+import { agentFactoryAbi, usdcAbi } from '@/lib/contracts/abis';
+import { getAgentFactoryAddress, getUsdcAddress } from '@/lib/contracts/config';
 
 export interface CreateAgentDialogProps {
   open: boolean;
@@ -27,8 +30,15 @@ const SAN_OPENINGS = ['e4', 'd4', 'c4', 'Nf3', 'g3', 'b3', 'f4'] as const;
 
 const DEFAULT_PLAYSTYLE: AgentPlaystyle = 'AGGRESSIVE';
 
+const USDC_AMOUNT = BigInt(100_000_000); // 100 USDC (6 decimals)
+
+function deriveSymbol(name: string): string {
+  return name.trim().split(/\s+/)[0].toUpperCase().slice(0, 6);
+}
+
 /**
- * Modal for creating a new agent. Calls POST /agent on submit.
+ * Modal for creating a new agent. Creates in DB, deploys on-chain via AgentFactory,
+ * then registers the token address.
  */
 export function CreateAgentDialog({
   open,
@@ -36,12 +46,15 @@ export function CreateAgentDialog({
   onCreated,
 }: CreateAgentDialogProps) {
   const { address, authenticated, login } = useWallet();
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
   const [name, setName] = useState('');
   const [playstyle, setPlaystyle] = useState<AgentPlaystyle>(DEFAULT_PLAYSTYLE);
   const [opening, setOpening] = useState('');
   const [personality, setPersonality] = useState('');
   const [profileImage, setProfileImage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusText, setStatusText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const resetForm = () => {
@@ -51,9 +64,11 @@ export function CreateAgentDialog({
     setPersonality('');
     setProfileImage('');
     setError(null);
+    setStatusText('');
   };
 
   const handleClose = () => {
+    if (isSubmitting) return;
     resetForm();
     onClose();
   };
@@ -64,10 +79,17 @@ export function CreateAgentDialog({
       return;
     }
 
+    if (!publicClient) {
+      setError('Wallet not connected. Please connect your wallet.');
+      return;
+    }
+
     setError(null);
     setIsSubmitting(true);
 
     try {
+      // Step 1: Create agent in DB
+      setStatusText('Creating agent...');
       const agent = await apiService.agent.create({
         name: name.trim(),
         playstyle,
@@ -77,19 +99,60 @@ export function CreateAgentDialog({
         profileImage: profileImage.trim() || undefined,
       });
 
-      onCreated?.(agent);
+      const agentWalletAddress = agent.walletAddress;
+      if (!agentWalletAddress) {
+        setError('Agent created but no wallet address assigned. Please contact support.');
+        setIsSubmitting(false);
+        return;
+      }
 
+      // Step 2: Derive token symbol
+      const symbol = deriveSymbol(name);
+
+      // Step 3: Approve USDC spend
+      setStatusText('Approving USDC...');
+      const factoryAddress = getAgentFactoryAddress();
+      const usdcAddress = getUsdcAddress();
+
+      const approveHash = await writeContractAsync({
+        address: usdcAddress,
+        abi: usdcAbi,
+        functionName: 'approve',
+        args: [factoryAddress, USDC_AMOUNT],
+      });
+
+      await publicClient.waitForTransactionReceipt({ hash: approveHash });
+
+      // Step 4: Call AgentFactory.createAgent
+      setStatusText('Deploying agent on-chain...');
+      const createHash = await writeContractAsync({
+        address: factoryAddress,
+        abi: agentFactoryAbi,
+        functionName: 'createAgent',
+        args: [name.trim(), symbol, USDC_AMOUNT, agentWalletAddress as `0x${string}`],
+      });
+
+      await publicClient.waitForTransactionReceipt({ hash: createHash });
+
+      // Step 5: Register token via backend
+      setStatusText('Registering token...');
+      const updatedAgent = await apiService.agent.registerToken(agent.id, createHash);
+
+      onCreated?.(updatedAgent);
       resetForm();
       onClose();
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         const message = err.response?.data?.message ?? err.message;
         setError(Array.isArray(message) ? message.join(', ') : message);
+      } else if (err instanceof Error) {
+        setError(err.message);
       } else {
         setError('Failed to create agent. Please try again.');
       }
     } finally {
       setIsSubmitting(false);
+      setStatusText('');
     }
   };
 
@@ -102,7 +165,8 @@ export function CreateAgentDialog({
       <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-8 relative">
         <button
           onClick={handleClose}
-          className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors"
+          disabled={isSubmitting}
+          className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors disabled:opacity-50"
         >
           <X className="w-6 h-6" />
         </button>
@@ -130,7 +194,8 @@ export function CreateAgentDialog({
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Magnus Bot, The Aggressor"
               maxLength={30}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
+              disabled={isSubmitting}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors disabled:opacity-50"
             />
           </div>
 
@@ -144,11 +209,12 @@ export function CreateAgentDialog({
                   key={strat.value}
                   type="button"
                   onClick={() => setPlaystyle(strat.value)}
+                  disabled={isSubmitting}
                   className={`p-4 rounded-lg border-2 text-left transition-all ${
                     playstyle === strat.value
                       ? 'border-violet-500 bg-violet-500/10'
                       : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                  }`}
+                  } disabled:opacity-50`}
                 >
                   <div className="font-medium text-white mb-1">
                     {strat.name}
@@ -167,7 +233,8 @@ export function CreateAgentDialog({
               <select
                 value={opening}
                 onChange={(e) => setOpening(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-4 pr-10 py-3 text-white focus:outline-none focus:border-violet-500 transition-colors appearance-none"
+                disabled={isSubmitting}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-4 pr-10 py-3 text-white focus:outline-none focus:border-violet-500 transition-colors appearance-none disabled:opacity-50"
               >
                 <option value="">None</option>
                 {SAN_OPENINGS.map((move) => (
@@ -189,7 +256,8 @@ export function CreateAgentDialog({
               onChange={(e) => setPersonality(e.target.value)}
               placeholder="Describe your agent's style or character..."
               rows={3}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors resize-none"
+              disabled={isSubmitting}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors resize-none disabled:opacity-50"
             />
           </div>
 
@@ -202,14 +270,15 @@ export function CreateAgentDialog({
               value={profileImage}
               onChange={(e) => setProfileImage(e.target.value)}
               placeholder="https://..."
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
+              disabled={isSubmitting}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors disabled:opacity-50"
             />
           </div>
 
           <div className="bg-violet-500/10 border border-violet-500/30 rounded-lg p-4">
             <p className="text-sm text-violet-200">
-              Your agent will be trained and deployed to compete in verifiable
-              matches. Token holders can trade shares as performance evolves.
+              Creating an agent requires a 100 USDC deposit. Your agent will be
+              deployed on-chain with its own ERC-20 token.
             </p>
           </div>
 
@@ -225,7 +294,7 @@ export function CreateAgentDialog({
             disabled={!isFormValid || isSubmitting}
             className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3.5 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Creating Agent...' : 'Create Agent & Deploy'}
+            {isSubmitting ? statusText || 'Processing...' : 'Create Agent & Deploy'}
           </button>
         </div>
       </div>

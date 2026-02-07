@@ -1,4 +1,4 @@
-import { mainnet, sepolia } from "wagmi/chains";
+import { mainnet, sepolia, baseSepolia } from "wagmi/chains";
 
 /**
  * Contract addresses by chain.
@@ -7,6 +7,7 @@ import { mainnet, sepolia } from "wagmi/chains";
 const addressesByChain = {
   [mainnet.id]: {} as Record<string, `0x${string}`>,
   [sepolia.id]: {} as Record<string, `0x${string}`>,
+  [baseSepolia.id]: {} as Record<string, `0x${string}`>,
 };
 
 export const contractAddresses = addressesByChain;
@@ -20,4 +21,16 @@ export function getContractAddress(
   const chain = contractAddresses[chainId as ChainId];
   if (!chain) return undefined;
   return chain[key];
+}
+
+export function getAgentFactoryAddress(): `0x${string}` {
+  const addr = process.env.NEXT_PUBLIC_AGENT_FACTORY_ADDRESS;
+  if (!addr) throw new Error("NEXT_PUBLIC_AGENT_FACTORY_ADDRESS is not set");
+  return addr as `0x${string}`;
+}
+
+export function getUsdcAddress(): `0x${string}` {
+  const addr = process.env.NEXT_PUBLIC_USDC_ADDRESS;
+  if (!addr) throw new Error("NEXT_PUBLIC_USDC_ADDRESS is not set");
+  return addr as `0x${string}`;
 }

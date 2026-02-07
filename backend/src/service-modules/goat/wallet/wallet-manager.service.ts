@@ -186,4 +186,12 @@ export class WalletManagerService {
   removeWallet(agentId: string): void {
     this.wallets.delete(agentId);
   }
+
+  getPublicClient(): PublicClient {
+    const transport = http(process.env.RPC_URL ?? 'https://sepolia.base.org');
+    return createPublicClient({
+      chain: baseSepolia,
+      transport,
+    });
+  }
 }
