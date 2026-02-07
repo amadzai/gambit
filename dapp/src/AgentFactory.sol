@@ -3,14 +3,20 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
+import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IPositionManager} from "v4-periphery/src/interfaces/IPositionManager.sol";
-import {PoolKey} from "v4-core/src/types/PoolKey.sol";
-import {Currency} from "v4-core/src/types/Currency.sol";
-import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
-import {TickMath} from "v4-core/src/libraries/TickMath.sol";
+import {PoolKey} from "v4-core/types/PoolKey.sol";
+import {Currency} from "v4-core/types/Currency.sol";
+import {IHooks} from "v4-core/interfaces/IHooks.sol";
+import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {Actions} from "@uniswap/v4-periphery/src/libraries/Actions.sol";
+import {StateLibrary} from "v4-core/libraries/StateLibrary.sol";
+import {PoolId, PoolIdLibrary} from "v4-core/types/PoolId.sol";
+import {FullMath} from "v4-core/libraries/FullMath.sol";
+import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmounts.sol";
 import "./AgentToken.sol";
 
 /**
@@ -19,6 +25,8 @@ import "./AgentToken.sol";
  * @dev Deploys tokens, initializes pools, and manages liquidity positions
  */
 contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
+    using StateLibrary for IPoolManager;
+    using PoolIdLibrary for PoolKey;
 
     /// @notice USDC token address (immutable)
     IERC20 public immutable usdc;
@@ -31,6 +39,9 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
 
     /// @notice BattleManager contract address
     address public battleManager;
+
+    /// @notice Hook contract address
+    address public hookAddress;
 
     /// @notice Fee to create an agent (in USDC, 6 decimals)
     uint256 public creationFee;
@@ -77,6 +88,7 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
 
     event BattleManagerUpdated(address indexed newBattleManager);
     event CreationFeeUpdated(uint256 newFee);
+    event HookAddressUpdated(address indexed newHook);
 
     error InvalidAddress();
     error InvalidAmount();
@@ -187,9 +199,30 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
     function getMarketCap(address agentToken) external view returns (uint256) {
         if (!agents[agentToken].exists) return 0;
 
-        // TODO: Read price from Uniswap V4 pool using StateView or slot0
-        // For now, return 0 (implement based on V4 pool state reading)
-        return 0;
+        PoolKey memory poolKey = _createPoolKey(agentToken);
+        PoolId poolId = poolKey.toId();
+        (uint160 sqrtPriceX96,,,) = poolManager.getSlot0(poolId);
+        if (sqrtPriceX96 == 0) return 0;
+
+        // price = (sqrtPriceX96 / 2^96)^2
+        // Market cap = price * totalSupply, adjusted for decimals
+        uint256 totalSupply = IERC20(agentToken).totalSupply();
+        bool usdcIsCurrency0 = address(usdc) < agentToken;
+
+        if (usdcIsCurrency0) {
+            // price of token1 (agent) in token0 (USDC) = (sqrtPrice)^2
+            // USDC has 6 decimals, agent has 18
+            return FullMath.mulDiv(
+                FullMath.mulDiv(uint256(sqrtPriceX96), uint256(sqrtPriceX96), 1 << 96),
+                totalSupply,
+                1 << 96
+            );
+        } else {
+            // price of token1 (USDC) in token0 (agent) = (sqrtPrice)^2
+            // Invert: agent price in USDC = 1 / price
+            uint256 priceX192 = FullMath.mulDiv(uint256(sqrtPriceX96), uint256(sqrtPriceX96), 1);
+            return FullMath.mulDiv(totalSupply, (1 << 192), priceX192);
+        }
     }
 
     /**
@@ -229,13 +262,21 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
     }
 
     /**
+     * @notice Update hook address (only owner)
+     * @param _hookAddress New hook address
+     */
+    function setHookAddress(address _hookAddress) external onlyOwner {
+        hookAddress = _hookAddress;
+        emit HookAddressUpdated(_hookAddress);
+    }
+
+    /**
      * @notice Transfer LP NFT ownership to BattleManager for settlement
      * @param positionId Position NFT ID
      */
     function transferPositionToBattleManager(uint256 positionId) external {
         require(msg.sender == battleManager, "Only BattleManager");
-        // Transfer LP NFT to BattleManager for settlement
-        // Implementation depends on PositionManager interface
+        IERC721(address(positionManager)).safeTransferFrom(address(this), battleManager, positionId);
     }
 
     /**
@@ -252,7 +293,7 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
 
     // Internal functions
 
-    function _createPoolKey(address tokenAddress) internal view returns (PoolKey memory) {
+    function _createPoolKey(address tokenAddress) public view returns (PoolKey memory) {
         // Ensure currency0 < currency1
         (Currency currency0, Currency currency1) = address(usdc) < tokenAddress
             ? (Currency.wrap(address(usdc)), Currency.wrap(tokenAddress))
@@ -263,7 +304,7 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
             currency1: currency1,
             fee: POOL_FEE,
             tickSpacing: TICK_SPACING,
-            hooks: IHooks(address(0)) // No custom hooks
+            hooks: IHooks(hookAddress)
         });
     }
 
@@ -272,17 +313,58 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
         uint256 tokenAmount,
         uint256 usdcAmount
     ) internal returns (uint256 positionId) {
-        // Create full range liquidity position
-        // Note: Actual implementation depends on IPositionManager interface
-        // This is a placeholder that needs to be adapted to the actual V4 periphery API
-
         int24 tickLower = TickMath.minUsableTick(TICK_SPACING);
         int24 tickUpper = TickMath.maxUsableTick(TICK_SPACING);
 
-        // TODO: Call positionManager.mint() with proper parameters
-        // Return the minted position NFT ID
+        // Get next token ID before minting
+        positionId = positionManager.nextTokenId();
 
-        // Placeholder return
-        return 1;
+        // Determine amounts based on currency ordering
+        uint256 amount0;
+        uint256 amount1;
+        if (address(usdc) < Currency.unwrap(poolKey.currency1)) {
+            // USDC is currency0
+            amount0 = usdcAmount;
+            amount1 = tokenAmount;
+        } else {
+            // Agent token is currency0
+            amount0 = tokenAmount;
+            amount1 = usdcAmount;
+        }
+
+        // Calculate liquidity from amounts at 1:1 price
+        uint160 sqrtPriceX96 = uint160(79228162514264337593543950336); // 1:1 price
+        uint160 sqrtPriceLowerX96 = TickMath.getSqrtPriceAtTick(tickLower);
+        uint160 sqrtPriceUpperX96 = TickMath.getSqrtPriceAtTick(tickUpper);
+
+        uint128 liquidity = LiquidityAmounts.getLiquidityForAmounts(
+            sqrtPriceX96,
+            sqrtPriceLowerX96,
+            sqrtPriceUpperX96,
+            amount0,
+            amount1
+        );
+
+        // Encode: MINT_POSITION + CLOSE_CURRENCY x2
+        bytes memory actions = abi.encodePacked(
+            uint8(Actions.MINT_POSITION),
+            uint8(Actions.CLOSE_CURRENCY),
+            uint8(Actions.CLOSE_CURRENCY)
+        );
+        bytes[] memory params = new bytes[](3);
+        params[0] = abi.encode(
+            poolKey,
+            tickLower,
+            tickUpper,
+            liquidity,
+            type(uint128).max,  // amount0Max (max slippage)
+            type(uint128).max,  // amount1Max (max slippage)
+            address(this),      // recipient (factory holds the NFT)
+            ""                  // hookData
+        );
+        params[1] = abi.encode(poolKey.currency0);
+        params[2] = abi.encode(poolKey.currency1);
+
+        positionManager.modifyLiquidities(abi.encode(actions, params), block.timestamp + 60);
     }
 }

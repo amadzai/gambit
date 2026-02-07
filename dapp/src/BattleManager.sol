@@ -6,9 +6,15 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IPositionManager} from "v4-periphery/src/interfaces/IPositionManager.sol";
-import {PoolKey} from "v4-core/src/types/PoolKey.sol";
+import {PoolKey} from "v4-core/types/PoolKey.sol";
+import {Actions} from "@uniswap/v4-periphery/src/libraries/Actions.sol";
+import {Currency} from "v4-core/types/Currency.sol";
+import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import "./AgentFactory.sol";
 
 /**
@@ -16,7 +22,7 @@ import "./AgentFactory.sol";
  * @notice Manages chess battles between AI agents with LP stake transfers
  * @dev Verifies backend signatures, locks stakes, and settles matches
  */
-contract BattleManager is ReentrancyGuard, Ownable {
+contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
@@ -34,6 +40,27 @@ contract BattleManager is ReentrancyGuard, Ownable {
 
     /// @notice Percentage of LP to stake in battles (basis points, 1000 = 10%)
     uint256 public constant STAKE_PERCENTAGE = 1000;
+
+    /// @notice Minimum liquidity floor that an agent must retain
+    uint128 public constant MIN_LIQUIDITY_FLOOR = 1e15;
+
+    /// @notice Match cooldown period (1 hour)
+    uint256 public constant MATCH_COOLDOWN = 1 hours;
+
+    /// @notice Match timeout period (24 hours)
+    uint256 public constant MATCH_TIMEOUT = 24 hours;
+
+    struct AgentStats {
+        uint256 wins;
+        uint256 losses;
+        uint256 totalMatches;
+    }
+
+    /// @notice Agent statistics
+    mapping(address => AgentStats) public agentStats;
+
+    /// @notice Last match timestamp for each agent
+    mapping(address => uint256) public lastMatchTimestamp;
 
     enum MatchStatus {
         Pending,
@@ -133,6 +160,12 @@ contract BattleManager is ReentrancyGuard, Ownable {
         if (!info1.exists || !info2.exists) revert InvalidAgent();
         if (agent1 == agent2) revert InvalidAgent();
 
+        // Check cooldown periods
+        require(block.timestamp >= lastMatchTimestamp[agent1] + MATCH_COOLDOWN, "Agent1 cooldown");
+        require(block.timestamp >= lastMatchTimestamp[agent2] + MATCH_COOLDOWN, "Agent2 cooldown");
+        lastMatchTimestamp[agent1] = block.timestamp;
+        lastMatchTimestamp[agent2] = block.timestamp;
+
         // Generate unique match ID
         matchId = keccak256(abi.encodePacked(
             agent1,
@@ -178,6 +211,9 @@ contract BattleManager is ReentrancyGuard, Ownable {
         if (matchData.status == MatchStatus.Completed) revert MatchAlreadySettled();
         if (winner != matchData.agent1 && winner != matchData.agent2) revert InvalidWinner();
 
+        // Check timeout
+        require(block.timestamp <= matchData.createdAt + MATCH_TIMEOUT, "Match expired");
+
         // Verify signature
         bytes32 messageHash = keccak256(abi.encodePacked(
             matchId,
@@ -201,6 +237,12 @@ contract BattleManager is ReentrancyGuard, Ownable {
 
         // Execute LP transfer from loser to winner
         _transferLPStake(loser, winner);
+
+        // Update agent stats
+        agentStats[winner].wins++;
+        agentStats[winner].totalMatches++;
+        agentStats[loser].losses++;
+        agentStats[loser].totalMatches++;
 
         // Update match status
         matchData.winner = winner;
@@ -267,6 +309,38 @@ contract BattleManager is ReentrancyGuard, Ownable {
     }
 
     /**
+     * @notice Cancel an expired match
+     * @param matchId Match identifier
+     */
+    function cancelExpiredMatch(bytes32 matchId) external {
+        Match storage matchData = matches[matchId];
+        require(matchData.status == MatchStatus.InProgress, "Not in progress");
+        require(block.timestamp > matchData.createdAt + MATCH_TIMEOUT, "Not expired");
+        matchData.status = MatchStatus.Cancelled;
+        matchData.settledAt = block.timestamp;
+        emit MatchCancelled(matchId, block.timestamp);
+    }
+
+    /**
+     * @notice Get agent statistics
+     * @param agent Agent token address
+     * @return Agent stats
+     */
+    function getAgentStats(address agent) external view returns (AgentStats memory) {
+        return agentStats[agent];
+    }
+
+    /**
+     * @notice Sweep tokens (admin function)
+     * @param token Token address to sweep
+     * @param to Recipient address
+     */
+    function sweepTokens(address token, address to) external onlyOwner {
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        if (balance > 0) IERC20(token).transfer(to, balance);
+    }
+
+    /**
      * @notice Update result signer address (only owner)
      * @param _resultSigner New result signer address
      */
@@ -274,6 +348,18 @@ contract BattleManager is ReentrancyGuard, Ownable {
         if (_resultSigner == address(0)) revert InvalidAddress();
         resultSigner = _resultSigner;
         emit ResultSignerUpdated(_resultSigner);
+    }
+
+    /**
+     * @notice Required to receive ERC721 LP NFTs
+     */
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return IERC721Receiver.onERC721Received.selector;
     }
 
     // Internal functions
@@ -286,26 +372,96 @@ contract BattleManager is ReentrancyGuard, Ownable {
     function _transferLPStake(address loser, address winner) internal {
         AgentFactory.AgentInfo memory loserInfo = agentFactory.getAgentInfo(loser);
         AgentFactory.AgentInfo memory winnerInfo = agentFactory.getAgentInfo(winner);
-
         uint256 loserPositionId = loserInfo.positionId;
         uint256 winnerPositionId = winnerInfo.positionId;
 
-        // TODO: Implement LP transfer logic using Uniswap V4 PositionManager
-        // 1. Get loser's LP position liquidity amount
-        // 2. Calculate 10% of liquidity (STAKE_PERCENTAGE)
-        // 3. Decrease loser's liquidity by 10%
-        // 4. Collect tokens from decreased liquidity
-        // 5. Swap loser's agent tokens for USDC
-        // 6. Add USDC to winner's LP position
+        // 1. Request NFT transfer from factory (if factory still holds it)
+        _ensurePositionOwnership(loserPositionId);
+        _ensurePositionOwnership(winnerPositionId);
 
-        // This requires proper integration with V4 periphery contracts
-        // Placeholder for implementation
+        // 2. Get loser's current liquidity
+        uint128 loserLiquidity = positionManager.getPositionLiquidity(loserPositionId);
+        uint128 stakeAmount = uint128(uint256(loserLiquidity) * STAKE_PERCENTAGE / 10000);
 
-        // Note: The actual implementation will depend on:
-        // - IPositionManager.decreaseLiquidity()
-        // - IPositionManager.collect()
-        // - IPoolManager.swap()
-        // - IPositionManager.increaseLiquidity()
+        // 3. Enforce minimum liquidity floor
+        if (loserLiquidity - stakeAmount < MIN_LIQUIDITY_FLOOR) {
+            if (loserLiquidity <= MIN_LIQUIDITY_FLOOR) return; // Can't stake anything
+            stakeAmount = loserLiquidity - MIN_LIQUIDITY_FLOOR;
+        }
+
+        // 4. Decrease loser's liquidity → tokens come to BattleManager
+        PoolKey memory loserPoolKey = agentFactory._createPoolKey(loser);
+        {
+            bytes memory actions = abi.encodePacked(
+                uint8(Actions.DECREASE_LIQUIDITY),
+                uint8(Actions.TAKE_PAIR)
+            );
+            bytes[] memory params = new bytes[](2);
+            params[0] = abi.encode(loserPositionId, stakeAmount, 0, 0, "");
+            params[1] = abi.encode(loserPoolKey.currency0, loserPoolKey.currency1, address(this));
+            positionManager.modifyLiquidities(abi.encode(actions, params), block.timestamp + 60);
+        }
+
+        // 5. Swap loser agent tokens → USDC using SWAP_EXACT_IN_SINGLE
+        uint256 loserTokenBalance = IERC20(loser).balanceOf(address(this));
+        if (loserTokenBalance > 0) {
+            IERC20(loser).approve(address(positionManager), loserTokenBalance);
+            bool zeroForOne = address(loser) < address(agentFactory.usdc());
+            bytes memory swapActions = abi.encodePacked(
+                uint8(Actions.SWAP_EXACT_IN_SINGLE),
+                uint8(Actions.SETTLE),
+                uint8(Actions.TAKE)
+            );
+            bytes[] memory swapParams = new bytes[](3);
+            swapParams[0] = abi.encode(
+                loserPoolKey,
+                zeroForOne,
+                loserTokenBalance,
+                0,   // amountOutMin (hackathon: 0, production: add slippage)
+                ""   // hookData
+            );
+            // Settle the input currency
+            Currency inputCurrency = zeroForOne ? loserPoolKey.currency0 : loserPoolKey.currency1;
+            Currency outputCurrency = zeroForOne ? loserPoolKey.currency1 : loserPoolKey.currency0;
+            swapParams[1] = abi.encode(inputCurrency, loserTokenBalance, false);
+            swapParams[2] = abi.encode(outputCurrency, address(this), 0); // OPEN_DELTA
+            positionManager.modifyLiquidities(abi.encode(swapActions, swapParams), block.timestamp + 60);
+        }
+
+        // 6. Increase winner's liquidity with collected USDC
+        uint256 usdcBalance = IERC20(address(agentFactory.usdc())).balanceOf(address(this));
+        if (usdcBalance > 0) {
+            IERC20(address(agentFactory.usdc())).approve(address(positionManager), usdcBalance);
+            PoolKey memory winnerPoolKey = agentFactory._createPoolKey(winner);
+            bytes memory increaseActions = abi.encodePacked(
+                uint8(Actions.INCREASE_LIQUIDITY),
+                uint8(Actions.CLOSE_CURRENCY),
+                uint8(Actions.CLOSE_CURRENCY)
+            );
+            bytes[] memory increaseParams = new bytes[](3);
+            increaseParams[0] = abi.encode(
+                winnerPositionId,
+                usdcBalance,          // liquidityDelta (approximate)
+                type(uint128).max,    // amount0Max
+                type(uint128).max,    // amount1Max
+                ""                    // hookData
+            );
+            increaseParams[1] = abi.encode(winnerPoolKey.currency0);
+            increaseParams[2] = abi.encode(winnerPoolKey.currency1);
+            positionManager.modifyLiquidities(abi.encode(increaseActions, increaseParams), block.timestamp + 60);
+        }
+    }
+
+    /**
+     * @notice Ensure BattleManager owns a position NFT
+     * @param positionId Position NFT ID
+     */
+    function _ensurePositionOwnership(uint256 positionId) internal {
+        address currentOwner = IERC721(address(positionManager)).ownerOf(positionId);
+        if (currentOwner == address(agentFactory)) {
+            agentFactory.transferPositionToBattleManager(positionId);
+        }
+        // If already owned by BattleManager, no action needed
     }
 
     /**
