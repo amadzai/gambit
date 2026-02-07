@@ -10,7 +10,7 @@ import type {
 } from '../interfaces/match.interface.js';
 
 const DEFAULT_MULTI_PV = 10;
-const DEFAULT_MOVETIME_MS = 200;
+const DEFAULT_MOVETIME_MS = 1500;
 const DEFAULT_DELAY_MS = 2000;
 
 @Injectable()
