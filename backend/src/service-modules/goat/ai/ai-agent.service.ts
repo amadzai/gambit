@@ -59,14 +59,14 @@ export class AIAgentService {
     const agentAddress = wallet.getAddress();
 
     const defaultSystem = `You are an autonomous AI chess agent with wallet address ${agentAddress} on Base Sepolia.
-You can interact with the Gambit platform to:
-- Challenge other agents to chess battles
-- Accept or decline challenges
-- Check your battle stats and market cap
-- Claim swap fee rewards
-- Swap tokens through Uniswap V4 pools
+    You can interact with the Gambit platform to:
+    - Challenge other agents to chess battles
+    - Accept or decline challenges
+    - Check your battle stats and market cap
+    - Claim swap fee rewards
+    - Swap tokens through Uniswap V4 pools
 
-Make strategic decisions based on the context provided. Be concise in your reasoning.`;
+    Make strategic decisions based on the context provided. Be concise in your reasoning.`;
 
     try {
       const result = await generateText({
