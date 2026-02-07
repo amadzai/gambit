@@ -8,9 +8,10 @@ import { ChessModule } from './api-modules/chess/chess.module.js';
 import { AgentModule } from './api-modules/agent/agent.module.js';
 import { MatchModule } from './api-modules/match/match.module.js';
 import { BigIntSerializerInterceptor } from './interceptors/big-int-serializer.interceptor.js';
+import { GoatServiceModule } from './service-modules/goat/goat.module.js';
 
 @Module({
-  imports: [PrismaModule, ChessModule, AgentModule, MatchModule],
+  imports: [PrismaModule, ChessModule, AgentModule, MatchModule, GoatServiceModule],
   controllers: [AppController],
   providers: [
     AppService,

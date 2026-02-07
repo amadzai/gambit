@@ -1,7 +1,7 @@
 "use client";
 
+import React, { useState } from "react";
 import { Chessboard } from "react-chessboard";
-import { useState } from "react";
 
 /**
  * Props for the interactive chess board. Use for arena or any view that needs
@@ -18,6 +18,8 @@ export interface LiveChessBoardProps {
   allowDragging?: boolean;
   /** Max width in px. Default 600. */
   boardWidth?: number;
+  /** Squares to highlight (e.g. last move from/to). */
+  highlightSquares?: { from: string; to: string } | null;
 }
 
 /** Standard starting position FEN – use for "start" or as default when no position given. */
@@ -34,12 +36,23 @@ export function LiveChessBoard({
   onMove,
   allowDragging = true,
   boardWidth,
+  highlightSquares,
 }: LiveChessBoardProps) {
   const [internalPosition] = useState(defaultPosition);
   const position = controlledPosition ?? internalPosition;
 
   const resolvedPosition =
     position === "start" ? defaultPosition : position;
+
+  // Build per-square highlight styles for the last move
+  const squareStyles: Record<string, React.CSSProperties> = {};
+  if (highlightSquares) {
+    const highlightStyle: React.CSSProperties = {
+      backgroundColor: "#4a3426",
+    };
+    squareStyles[highlightSquares.from] = highlightStyle;
+    squareStyles[highlightSquares.to] = highlightStyle;
+  }
 
   const options = {
     position: resolvedPosition,
@@ -51,6 +64,7 @@ export function LiveChessBoard({
     darkSquareStyle: {
       backgroundColor: "hsl(240, 21%, 12%)",
     },
+    squareStyles,
     onPieceDrop: ({
       sourceSquare,
       targetSquare,

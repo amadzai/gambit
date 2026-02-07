@@ -1,0 +1,89 @@
+import { Tool } from '@goat-sdk/core';
+import { EVMWalletClient } from '@goat-sdk/wallet-evm';
+import { agentFactoryAbi } from './abis/agent-factory.abi.js';
+import {
+  CreateAgentParams,
+  GetMarketCapParams,
+  GetAgentInfoParams,
+} from './parameters.js';
+import { Abi } from 'viem';
+
+export class AgentFactoryService {
+  private contractAddress: `0x${string}`;
+
+  constructor(contractAddress: `0x${string}`) {
+    this.contractAddress = contractAddress;
+  }
+
+  @Tool({
+    description:
+      'Create a new AI chess agent with a tradeable ERC20 token and Uniswap V4 pool on Base Sepolia',
+  })
+  async createAgent(
+    walletClient: EVMWalletClient,
+    parameters: CreateAgentParams,
+  ): Promise<string> {
+    const { hash } = await walletClient.sendTransaction({
+      to: this.contractAddress,
+      abi: agentFactoryAbi as Abi,
+      functionName: 'createAgent',
+      args: [
+        parameters.name,
+        parameters.symbol,
+        BigInt(parameters.usdcAmount),
+        parameters.agentWallet,
+      ],
+    });
+    return `Agent created. Transaction hash: ${hash}`;
+  }
+
+  @Tool({
+    description:
+      'Get the market cap of an agent token in USDC from the AgentFactory contract',
+  })
+  async getMarketCap(
+    walletClient: EVMWalletClient,
+    parameters: GetMarketCapParams,
+  ): Promise<string> {
+    const result = await walletClient.read({
+      address: this.contractAddress,
+      abi: agentFactoryAbi as Abi,
+      functionName: 'getMarketCap',
+      args: [parameters.agentToken],
+    });
+    return `Market cap: ${String(result.value)} (USDC base units, 6 decimals)`;
+  }
+
+  @Tool({
+    description:
+      'Get all agent token addresses created through the AgentFactory',
+  })
+  async getAllAgents(walletClient: EVMWalletClient): Promise<string> {
+    const result = await walletClient.read({
+      address: this.contractAddress,
+      abi: agentFactoryAbi as Abi,
+      functionName: 'getAllAgents',
+    });
+    const agents = result.value as string[];
+    return `All agents (${agents.length}): ${agents.join(', ')}`;
+  }
+
+  @Tool({
+    description:
+      'Get detailed info about an agent including name, symbol, creator, wallet, and position IDs',
+  })
+  async getAgentInfo(
+    walletClient: EVMWalletClient,
+    parameters: GetAgentInfoParams,
+  ): Promise<string> {
+    const result = await walletClient.read({
+      address: this.contractAddress,
+      abi: agentFactoryAbi as Abi,
+      functionName: 'getAgentInfo',
+      args: [parameters.tokenAddress],
+    });
+    return JSON.stringify(result.value, (_key, value) =>
+      typeof value === 'bigint' ? value.toString() : value,
+    );
+  }
+}

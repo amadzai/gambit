@@ -202,7 +202,6 @@ export class AgentService {
 
     const prompt = [
       `You are a chess agent with a ${agent.playstyle} playstyle. ${playstyleGuidance}`,
-      `Your playstyle is your PRIMARY decision criterion — choose the move that best embodies your playstyle, not necessarily the objectively strongest move.`,
       personalityHint,
       ``,
       `Position context:`,
@@ -213,8 +212,12 @@ export class AgentService {
       `Candidate moves (presented in random order — ordering does NOT imply strength):`,
       JSON.stringify(shuffled),
       ``,
+      `Decision priority:`,
+      `1. SAFETY FIRST — If the position demands an urgent response (e.g. a piece is hanging, a queen or rook is under attack, there is a back-rank mate threat, or you are in check), you MUST address that threat. Pick the move that resolves the danger.`,
+      `2. PLAYSTYLE SECOND — Only when no immediate tactical emergency exists should you express your ${agent.playstyle} playstyle. In calm positions, choose the move that best embodies your playstyle rather than the objectively strongest move.`,
+      ``,
       `Instructions:`,
-      `- Evaluate each candidate through the lens of your ${agent.playstyle} playstyle.`,
+      `- Evaluate each candidate through the lens above: first check for tactical urgency, then apply your ${agent.playstyle} playstyle.`,
       `- You MUST choose by the "i" value from the candidate list.`,
       `- Valid pick values are: ${shuffled.map((c) => c.i).join(', ')}`,
       `- Do NOT output a UCI move. Do NOT invent a new move.`,
