@@ -4,9 +4,9 @@ import { generateText, stepCountIs } from 'ai';
 import { getOnChainTools } from '@goat-sdk/adapter-vercel-ai';
 import { EVMWalletClient } from '@goat-sdk/wallet-evm';
 import { erc20, USDC } from '@goat-sdk/plugin-erc20';
-import { gambait } from '../plugins/gambait/gambait.plugin.js';
 import { uniswapV4 } from '../plugins/uniswap-v4/uniswap-v4.plugin.js';
 import { getContractAddresses } from '../constants/contracts.js';
+import { gambit } from '../plugins/gambit/gambit.plugin.js';
 
 @Injectable()
 export class AIAgentService {
@@ -26,7 +26,7 @@ export class AIAgentService {
     return getOnChainTools({
       wallet,
       plugins: [
-        gambait({
+        gambit({
           agentFactoryAddress: addresses.AGENT_FACTORY,
           battleManagerAddress: addresses.BATTLE_MANAGER,
           gambitHookAddress: addresses.GAMBIT_HOOK,
@@ -84,9 +84,7 @@ Make strategic decisions based on the context provided. Be concise in your reaso
 
       return result.text || 'Agent completed actions without text response.';
     } catch (error) {
-      this.logger.error(
-        `Agent decision failed for ${agentAddress}: ${error}`,
-      );
+      this.logger.error(`Agent decision failed for ${agentAddress}: ${error}`);
       throw error;
     }
   }

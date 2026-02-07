@@ -10,7 +10,7 @@ export type GambitPluginOptions = {
   gambitHookAddress: `0x${string}`;
 };
 
-export class GambaitPlugin extends PluginBase {
+export class GambitPlugin extends PluginBase {
   constructor(options: GambitPluginOptions) {
     super('gambait', [
       new AgentFactoryService(options.agentFactoryAddress),
@@ -23,6 +23,6 @@ export class GambaitPlugin extends PluginBase {
     chain.type === 'evm' && chain.id === BASE_SEPOLIA_CHAIN_ID;
 }
 
-export function gambait(options: GambitPluginOptions): GambaitPlugin {
-  return new GambaitPlugin(options);
+export function gambit(options: GambitPluginOptions): GambitPlugin {
+  return new GambitPlugin(options);
 }
