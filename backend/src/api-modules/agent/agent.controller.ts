@@ -21,12 +21,15 @@ import { AgentCrudService } from '../../service-modules/agent-service/providers/
 import {
   AgentMoveDto,
   CreateAgentDto,
+  ExecuteAgentActionDto,
   UpdateAgentDto,
 } from './dto/agent.dto.js';
 import {
   AgentMoveResponseDto,
   AgentResponseDto,
+  ExecuteAgentActionResponseDto,
 } from './dto/agent.response.dto.js';
+import { GoatService } from '../../service-modules/goat/goat.service.js';
 
 @ApiTags('Agent')
 @Controller('agent')
@@ -35,6 +38,7 @@ export class AgentController {
     private readonly agentCrudService: AgentCrudService,
     private readonly agentService: AgentService,
     private readonly walletManager: WalletManagerService,
+    private readonly goatService: GoatService,
   ) {}
 
   @Post()
@@ -129,5 +133,32 @@ export class AgentController {
       multiPv: dto.multiPv,
       movetimeMs: dto.movetimeMs,
     });
+  }
+
+  @Post(':id/action')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Execute a GOAT action for an agent' })
+  @ApiParam({ name: 'id', description: 'Agent ID' })
+  @ApiBody({ type: ExecuteAgentActionDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Agent action executed successfully',
+    type: ExecuteAgentActionResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Agent not found' })
+  async executeAction(
+    @Param('id') id: string,
+    @Body() dto: ExecuteAgentActionDto,
+  ): Promise<ExecuteAgentActionResponseDto> {
+    // Ensure a clean 404 instead of Prisma update errors downstream.
+    await this.agentCrudService.get({ id });
+
+    const result = await this.goatService.executeAgentAction(
+      id,
+      dto.context,
+      dto.systemPrompt,
+    );
+
+    return { result };
   }
 }

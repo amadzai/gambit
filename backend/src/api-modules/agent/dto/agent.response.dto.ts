@@ -81,3 +81,11 @@ export class AgentMoveResponseDto {
   })
   fallbackUsed: boolean;
 }
+
+export class ExecuteAgentActionResponseDto {
+  @ApiProperty({
+    description: 'Tool/agent output text from the GOAT action execution',
+    example: 'Claimed rewards. Transaction hash: 0xabc123...',
+  })
+  result: string;
+}
