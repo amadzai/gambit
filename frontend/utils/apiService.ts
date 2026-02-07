@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { ChessGame } from '@/types/chess';
+import type { ChessGame, ListGamesParams } from '@/types/chess';
 import type { Agent } from '@/types/agent';
 import type { StartMatchRequest, StartMatchResponse } from '@/types/match';
 
@@ -15,6 +15,11 @@ const api = axios.create({
 
 export const apiService = {
   chess: {
+    getGames: async (params?: ListGamesParams): Promise<ChessGame[]> => {
+      const res = await api.get<ChessGame[]>('/chess/games', { params });
+      return res.data;
+    },
+
     getGameById: async (gameId: string): Promise<ChessGame> => {
       const res = await api.get<ChessGame>(`/chess/games/${gameId}`);
       return res.data;
