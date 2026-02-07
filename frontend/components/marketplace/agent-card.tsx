@@ -5,10 +5,17 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import type { MarketplaceAgent } from "@/types/marketplace";
 
-interface AgentCardProps {
+/**
+ * Props for the marketplace agent card. Expects MarketplaceAgent from @/types/marketplace.
+ */
+export interface AgentCardProps {
+  /** Agent data (MarketplaceAgent from @/types/marketplace). */
   agent: MarketplaceAgent;
 }
 
+/**
+ * Card showing agent summary, performance chart, price, win rate; links to agent page. Used on marketplace dashboard.
+ */
 export function AgentCard({ agent }: AgentCardProps) {
   const chartData = agent.performance.map((value, index) => ({
     index,

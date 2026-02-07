@@ -1,15 +1,38 @@
 "use client";
 
 import { useState } from "react";
+import type { TradePanelHoldings } from "@/types/marketplace";
 
-interface TradePanelProps {
+/**
+ * Props for the trade panel. Optional holdings and onBuy/onSell let parents wire real data and handlers.
+ */
+export interface TradePanelProps {
+  /** Current price per share (display and share calculation). */
   price: number;
+  /** Optional agent name for the heading. */
   agentName?: string;
+  /** Optional. Your current shares and value for this agent (TradePanelHoldings from @/types/marketplace). When omitted, placeholder values may be shown. */
+  holdings?: TradePanelHoldings;
+  /** Optional. Called when user confirms a buy. Amount is the ETH amount as entered (string). */
+  onBuy?: (amount: string) => void;
+  /** Optional. Called when user confirms a sell. Amount is the ETH amount as entered (string). */
+  onSell?: (amount: string) => void;
 }
 
-export function TradePanel({ price, agentName }: TradePanelProps) {
+/**
+ * Buy/sell panel for agent shares. Displays price, amount input, estimated shares, and optional holdings. Used on agent page.
+ */
+export function TradePanel({ price, agentName, holdings, onBuy, onSell }: TradePanelProps) {
   const [tradeAmount, setTradeAmount] = useState("");
   const [tradeType, setTradeType] = useState<"buy" | "sell">("buy");
+
+  const handleTrade = () => {
+    if (tradeType === "buy" && onBuy) onBuy(tradeAmount);
+    else if (tradeType === "sell" && onSell) onSell(tradeAmount);
+  };
+
+  const sharesDisplay = holdings?.shares ?? 12.5;
+  const valueDisplay = holdings != null ? holdings.value : 12.5 * price;
 
   return (
     <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 sticky top-6">
@@ -79,6 +102,8 @@ export function TradePanel({ price, agentName }: TradePanelProps) {
       </div>
 
       <button
+        type="button"
+        onClick={handleTrade}
         className={`w-full py-3.5 rounded-lg font-medium transition-all ${
           tradeType === "buy"
             ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg shadow-green-500/25"
@@ -92,12 +117,12 @@ export function TradePanel({ price, agentName }: TradePanelProps) {
         <div className="text-sm text-slate-400 mb-2">Your Holdings</div>
         <div className="flex justify-between items-center mb-2">
           <span className="text-slate-300">Shares</span>
-          <span className="font-bold text-white">12.5</span>
+          <span className="font-bold text-white">{sharesDisplay}</span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-slate-300">Value</span>
           <span className="font-bold text-violet-400">
-            ${(12.5 * price).toFixed(2)}
+            ${valueDisplay.toFixed(2)}
           </span>
         </div>
       </div>

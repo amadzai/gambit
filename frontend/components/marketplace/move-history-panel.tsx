@@ -1,10 +1,18 @@
 import type { MatchMove } from "@/types/marketplace";
 
-interface MoveHistoryPanelProps {
+/**
+ * Props for the move history panel. Expects MatchMove[] from @/types/marketplace.
+ */
+export interface MoveHistoryPanelProps {
+  /** List of moves (MatchMove from @/types/marketplace). */
   moves: MatchMove[];
+  /** Optional index to highlight as current (defaults to last move). */
   currentMoveIndex?: number;
 }
 
+/**
+ * Panel listing move history with evaluations. Used on match page. Uses MatchMove[].
+ */
 export function MoveHistoryPanel({
   moves,
   currentMoveIndex,

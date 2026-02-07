@@ -6,11 +6,19 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Target } from "lucide-react";
 
-interface AgentPanelProps {
+/**
+ * Props for the arena agent panel. Expects ChessAgent from @/types/agent.
+ */
+export interface AgentPanelProps {
+  /** Agent data (ChessAgent from @/types/agent). */
   agent: ChessAgent;
+  /** Side this agent is playing (white or black). */
   color: "white" | "black";
 }
 
+/**
+ * Displays a single agent's info (name, playstyle, ELO, win rate, record) for arena match view.
+ */
 export function AgentPanel({ agent, color }: AgentPanelProps) {
   const getPlaystyleColor = (playstyle: string) => {
     const colors = {

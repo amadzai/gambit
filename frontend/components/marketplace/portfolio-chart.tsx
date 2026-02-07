@@ -9,11 +9,19 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import type { PortfolioChartDataPoint } from "@/types/marketplace";
 
-interface PortfolioChartProps {
-  data: { date: string; value: number }[];
+/**
+ * Props for the portfolio chart. Expects PortfolioChartDataPoint[] from @/types/marketplace.
+ */
+export interface PortfolioChartProps {
+  /** Time series of portfolio value (PortfolioChartDataPoint from @/types/marketplace). */
+  data: PortfolioChartDataPoint[];
 }
 
+/**
+ * Area chart of portfolio performance over time. Used on my-dashboard.
+ */
 export function PortfolioChart({ data }: PortfolioChartProps) {
   return (
     <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">

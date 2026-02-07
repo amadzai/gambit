@@ -1,7 +1,14 @@
-interface EvaluationBarProps {
+/**
+ * Props for the evaluation bar. Evaluation is typically in centipawns (e.g. -10 to +10).
+ */
+export interface EvaluationBarProps {
+  /** Engine evaluation (positive = white advantage). */
   evaluation: number;
 }
 
+/**
+ * Vertical bar showing current position evaluation (white vs black advantage). Used on match page.
+ */
 export function EvaluationBar({ evaluation }: EvaluationBarProps) {
   // evaluation range typically -10 to +10, map to 0-100
   const normalized = (evaluation + 10) / 20;

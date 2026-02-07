@@ -11,6 +11,46 @@ export interface MarketplaceAgent extends ChessAgent {
   volume24h?: number;
 }
 
+/**
+ * Agent shape for "my dashboard" grid. Use this type when passing data to MyAgentsGrid.
+ * Contains the fields needed for the grid; can be built from MarketplaceAgent (rating = elo, status/created added).
+ */
+export interface MyDashboardAgent {
+  id: string;
+  name: string;
+  avatar: string;
+  /** Display rating (e.g. ELO). */
+  rating: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  price: number;
+  priceChange: number;
+  marketCap: number;
+  holders: number;
+  color: string;
+  /** Agent status (e.g. "active", "pending"). */
+  status: string;
+  /** Created date (ISO string or display string). */
+  created: string;
+}
+
+/**
+ * One data point for the portfolio performance chart. Use with PortfolioChart.
+ */
+export interface PortfolioChartDataPoint {
+  date: string;
+  value: number;
+}
+
+/**
+ * Holdings summary for TradePanel "Your Holdings" section. Pass to TradePanel to display real data.
+ */
+export interface TradePanelHoldings {
+  shares: number;
+  value: number;
+}
+
 export interface LiveMatchData {
   id: string;
   white: {

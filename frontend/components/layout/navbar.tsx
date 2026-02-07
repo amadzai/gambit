@@ -7,6 +7,10 @@ import { usePrivy } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+/**
+ * Main app navigation (Leaderboard, Create Agent, Arena) with wallet connect (Privy).
+ * No props; uses pathname and auth state internally.
+ */
 export function Navbar() {
   const pathname = usePathname();
   const { login, logout, authenticated, user } = usePrivy();

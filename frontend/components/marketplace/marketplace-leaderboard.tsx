@@ -1,10 +1,17 @@
 import { Trophy, TrendingUp } from "lucide-react";
 import type { MarketplaceAgent } from "@/types/marketplace";
 
-interface MarketplaceLeaderboardProps {
+/**
+ * Props for the marketplace leaderboard. Expects MarketplaceAgent[] from @/types/marketplace.
+ */
+export interface MarketplaceLeaderboardProps {
+  /** List of agents (MarketplaceAgent from @/types/marketplace). Sorted by ELO in component. */
   agents: MarketplaceAgent[];
 }
 
+/**
+ * Leaderboard table of agents by rank (ELO), win rate, matches. Uses MarketplaceAgent[].
+ */
 export function MarketplaceLeaderboard({
   agents,
 }: MarketplaceLeaderboardProps) {

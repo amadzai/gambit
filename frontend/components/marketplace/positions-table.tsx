@@ -4,10 +4,17 @@ import Link from "next/link";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import type { PortfolioPosition } from "@/types/marketplace";
 
-interface PositionsTableProps {
+/**
+ * Props for the positions table. Expects PortfolioPosition[] from @/types/marketplace.
+ */
+export interface PositionsTableProps {
+  /** User positions (PortfolioPosition from @/types/marketplace). */
   positions: PortfolioPosition[];
 }
 
+/**
+ * Table of user portfolio positions (agent, shares, prices, P&L). Uses PortfolioPosition[].
+ */
 export function PositionsTable({ positions }: PositionsTableProps) {
   return (
     <div className="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden">

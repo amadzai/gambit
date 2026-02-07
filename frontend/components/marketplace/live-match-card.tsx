@@ -8,10 +8,17 @@ import { DEFAULT_POSITION } from "@/components/arena/chess-board";
 /** Default board position for live match cards when position is missing. */
 const LIVE_MATCH_CARD_DEFAULT_POSITION = DEFAULT_POSITION;
 
-interface LiveMatchCardProps {
+/**
+ * Props for the live match card. Expects LiveMatchData from @/types/marketplace.
+ */
+export interface LiveMatchCardProps {
+  /** Match data (LiveMatchData from @/types/marketplace). */
   match: LiveMatchData;
 }
 
+/**
+ * Card for a single live match: players, mini board, move count; links to match page. Uses LiveMatchData.
+ */
 export function LiveMatchCard({ match }: LiveMatchCardProps) {
   return (
     <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">

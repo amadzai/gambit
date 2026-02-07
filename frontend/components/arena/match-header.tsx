@@ -4,13 +4,23 @@ import { ChessAgent } from "@/types/agent";
 import { Badge } from "@/components/ui/badge";
 import { Swords } from "lucide-react";
 
-interface MatchHeaderProps {
+/**
+ * Props for the match header. Expects ChessAgent from @/types/agent.
+ */
+export interface MatchHeaderProps {
+  /** White side agent (ChessAgent from @/types/agent). */
   whiteAgent: ChessAgent;
+  /** Black side agent (ChessAgent from @/types/agent). */
   blackAgent: ChessAgent;
+  /** Current match status. */
   status: "pending" | "in-progress" | "completed";
+  /** Set when status is "completed". */
   winner?: "white" | "black" | "draw";
 }
 
+/**
+ * Header showing white vs black agent names and match status (pending / in-progress / completed).
+ */
 export function MatchHeader({ whiteAgent, blackAgent, status, winner }: MatchHeaderProps) {
   const getStatusColor = () => {
     if (status === "completed") {

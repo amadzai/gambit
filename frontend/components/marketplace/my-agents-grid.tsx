@@ -2,28 +2,19 @@
 
 import Link from "next/link";
 import { TrendingUp, TrendingDown, Settings, Plus } from "lucide-react";
+import type { MyDashboardAgent } from "@/types/marketplace";
 
-interface MyAgent {
-  id: string;
-  name: string;
-  avatar: string;
-  rating: number;
-  wins: number;
-  losses: number;
-  draws: number;
-  price: number;
-  priceChange: number;
-  marketCap: number;
-  holders: number;
-  color: string;
-  status: string;
-  created: string;
+/**
+ * Props for the my-agents grid. Expects MyDashboardAgent[] from @/types/marketplace.
+ */
+export interface MyAgentsGridProps {
+  /** List of agents owned or managed by the user (MyDashboardAgent from @/types/marketplace). */
+  agents: MyDashboardAgent[];
 }
 
-interface MyAgentsGridProps {
-  agents: MyAgent[];
-}
-
+/**
+ * Grid of agent cards for "my dashboard" (price, win rate, links to agent page and settings). Uses MyDashboardAgent[].
+ */
 export function MyAgentsGrid({ agents }: MyAgentsGridProps) {
   return (
     <div className="space-y-6">

@@ -3,9 +3,23 @@
 import { useState } from "react";
 import { X, Sparkles } from "lucide-react";
 
-interface CreateAgentDialogProps {
+/** Payload passed to CreateAgentDialog onSubmit. Amount is the raw deposit string (ETH). */
+export interface CreateAgentDialogSubmitPayload {
+  name: string;
+  deposit: string;
+  strategy: string;
+}
+
+/**
+ * Props for the create-agent modal. Control visibility with open/onClose; optionally handle submit with onSubmit.
+ */
+export interface CreateAgentDialogProps {
+  /** Whether the dialog is visible. */
   open: boolean;
+  /** Called when the dialog should close (e.g. overlay or X). */
   onClose: () => void;
+  /** Optional. Called when "Create Agent & Deploy" is clicked. If returns a Promise, dialog closes after it resolves. */
+  onSubmit?: (payload: CreateAgentDialogSubmitPayload) => void | Promise<void>;
 }
 
 const strategies = [
@@ -15,10 +29,31 @@ const strategies = [
   { id: "positional", name: "Positional", desc: "Long-term strategic play" },
 ];
 
-export function CreateAgentDialog({ open, onClose }: CreateAgentDialogProps) {
+/**
+ * Modal for creating a new agent (name, deposit, strategy). Use open/onClose to control; optional onSubmit to handle create.
+ */
+export function CreateAgentDialog({ open, onClose, onSubmit }: CreateAgentDialogProps) {
   const [name, setName] = useState("");
   const [deposit, setDeposit] = useState("");
   const [strategy, setStrategy] = useState("aggressive");
+
+  const handleClose = () => {
+    setName("");
+    setDeposit("");
+    setStrategy("aggressive");
+    onClose();
+  };
+
+  const handleSubmit = async () => {
+    const payload: CreateAgentDialogSubmitPayload = { name, deposit, strategy };
+    if (onSubmit) {
+      const result = onSubmit(payload);
+      if (result instanceof Promise) {
+        await result;
+      }
+      handleClose();
+    }
+  };
 
   if (!open) return null;
 
@@ -26,7 +61,7 @@ export function CreateAgentDialog({ open, onClose }: CreateAgentDialogProps) {
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-8 relative">
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors"
         >
           <X className="w-6 h-6" />
@@ -107,7 +142,11 @@ export function CreateAgentDialog({ open, onClose }: CreateAgentDialogProps) {
             </p>
           </div>
 
-          <button className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3.5 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3.5 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25"
+          >
             Create Agent & Deploy
           </button>
         </div>

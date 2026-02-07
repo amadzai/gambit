@@ -18,6 +18,10 @@ import { Badge } from "@/components/ui/badge";
 import { Playstyle, FirstMove } from "@/types/agent";
 import { Coins } from "lucide-react";
 
+/**
+ * Form for creating a new chess agent (name, personality, playstyle, first move).
+ * Uses Playstyle and FirstMove from @/types/agent. Requires wallet auth (Privy).
+ */
 export function CreateAgentForm() {
   const { authenticated, login } = usePrivy();
   const [name, setName] = useState("");

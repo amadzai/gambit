@@ -8,6 +8,10 @@ import { usePrivy } from "@privy-io/react-auth";
 import { Plus } from "lucide-react";
 import { CreateAgentDialog } from "@/components/marketplace/create-agent-dialog";
 
+/**
+ * Marketplace header with logo, Dashboard/My Dashboard links, Create Agent button, and wallet connect.
+ * Owns CreateAgentDialog; opens it when "Create Agent" is clicked. No props.
+ */
 export function MarketplaceNav() {
   const pathname = usePathname();
   const { login, logout, authenticated, user } = usePrivy();
