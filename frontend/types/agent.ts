@@ -22,10 +22,17 @@ export interface ChessAgent {
   createdAt: Date;
 }
 
-/** Playstyle values returned by the backend API (Prisma enum). */
 export type AgentPlaystyle = 'AGGRESSIVE' | 'DEFENSIVE' | 'POSITIONAL';
 
-/** Agent shape returned by the backend API (`AgentResponseDto`). */
+export interface CreateAgentRequest {
+  name: string;
+  playstyle: AgentPlaystyle;
+  opening?: string;
+  personality?: string;
+  profileImage?: string;
+  elo?: number;
+}
+
 export interface Agent {
   id: string;
   name: string;
