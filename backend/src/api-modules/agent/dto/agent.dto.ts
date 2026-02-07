@@ -17,6 +17,14 @@ export class CreateAgentDto {
   playstyle: Playstyle;
 
   @ApiPropertyOptional({
+    description: 'Wallet address of the agent creator',
+    example: '0x1234567890abcdef1234567890abcdef12345678',
+  })
+  @IsOptional()
+  @IsString()
+  creator?: string;
+
+  @ApiPropertyOptional({
     description:
       'Preferred opening hint (free-form string). If it looks like UCI (e2e4), the agent will try to match it early.',
     example: 'e2e4',
@@ -72,6 +80,14 @@ export class UpdateAgentDto {
   @IsOptional()
   @IsEnum(Playstyle)
   playstyle?: Playstyle;
+
+  @ApiPropertyOptional({
+    description: 'Wallet address of the agent creator',
+    example: '0x1234567890abcdef1234567890abcdef12345678',
+  })
+  @IsOptional()
+  @IsString()
+  creator?: string;
 
   @ApiPropertyOptional({
     description:

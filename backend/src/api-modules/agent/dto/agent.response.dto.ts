@@ -15,6 +15,11 @@ export class AgentResponseDto {
   @ApiProperty({ enum: Playstyle, example: Playstyle.AGGRESSIVE })
   playstyle: Playstyle;
 
+  @ApiPropertyOptional({
+    example: '0x1234567890abcdef1234567890abcdef12345678',
+  })
+  creator?: string | null;
+
   @ApiPropertyOptional({ example: 'e2e4' })
   opening?: string | null;
 

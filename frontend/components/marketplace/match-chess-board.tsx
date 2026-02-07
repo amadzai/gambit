@@ -14,6 +14,8 @@ export interface MatchChessBoardProps {
   boardWidth?: number;
   /** If true, pieces can be dragged. Default false (read-only). */
   interactive?: boolean;
+  /** Squares to highlight (e.g. last move from/to). */
+  highlightSquares?: { from: string; to: string } | null;
 }
 
 /**
@@ -24,6 +26,7 @@ export function MatchChessBoard({
   defaultPosition = DEFAULT_POSITION,
   boardWidth,
   interactive = false,
+  highlightSquares,
 }: MatchChessBoardProps) {
   return (
     <LiveChessBoard
@@ -31,6 +34,7 @@ export function MatchChessBoard({
       defaultPosition={defaultPosition}
       boardWidth={boardWidth}
       allowDragging={interactive}
+      highlightSquares={highlightSquares}
     />
   );
 }

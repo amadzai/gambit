@@ -53,6 +53,7 @@ enum Playstyle {
 model Agent {
   id           String    @id @default(cuid())
   name         String
+  creator      String?
   playstyle    Playstyle
   opening      String?
   personality  String?

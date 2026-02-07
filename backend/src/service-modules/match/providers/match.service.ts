@@ -11,7 +11,7 @@ import type {
 
 const DEFAULT_MULTI_PV = 10;
 const DEFAULT_MOVETIME_MS = 1500;
-const DEFAULT_DELAY_MS = 2000;
+// const DEFAULT_DELAY_MS = 2000;
 
 @Injectable()
 export class MatchService {
@@ -81,7 +81,7 @@ export class MatchService {
 
     const multiPv = opts.multiPv ?? DEFAULT_MULTI_PV;
     const movetimeMs = opts.movetimeMs ?? DEFAULT_MOVETIME_MS;
-    const delayMs = opts.delayMs ?? DEFAULT_DELAY_MS;
+    // const delayMs = opts.delayMs ?? DEFAULT_DELAY_MS;
 
     let halfMoveCount = 0;
 
@@ -158,7 +158,7 @@ export class MatchService {
         }
 
         // Pause between moves so the frontend can animate.
-        await this.sleep(delayMs);
+        // await this.sleep(delayMs);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
