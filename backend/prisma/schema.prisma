@@ -51,13 +51,15 @@ enum Playstyle {
 }
 
 model Agent {
-  id           String    @id @default(cuid())
-  name         String
-  playstyle    Playstyle
-  opening      String?
-  personality  String?
-  profileImage String?
-  elo          Int       @default(1000)
+  id                  String    @id @default(cuid())
+  name                String
+  playstyle           Playstyle
+  opening             String?
+  personality         String?
+  profileImage        String?
+  elo                 Int       @default(1000)
+  walletAddress       String?
+  encryptedPrivateKey String?
 
   whiteGames ChessGame[] @relation("WhiteGames")
   blackGames ChessGame[] @relation("BlackGames")
