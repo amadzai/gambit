@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, Sparkles, ChevronDown } from 'lucide-react';
 import axios from 'axios';
 import { useWriteContract, usePublicClient } from 'wagmi';
+import { baseSepolia } from 'wagmi/chains';
 import type { AgentPlaystyle, Agent } from '@/types/agent';
 import { apiService } from '@/utils/apiService';
 import { useWallet } from '@/hooks/useWallet';
@@ -46,8 +47,8 @@ export function CreateAgentDialog({
   onCreated,
 }: CreateAgentDialogProps) {
   const { address, authenticated, login } = useWallet();
-  const { writeContractAsync } = useWriteContract();
-  const publicClient = usePublicClient();
+  const { mutateAsync: writeContractMutateAsync } = useWriteContract();
+  const publicClient = usePublicClient({ chainId: baseSepolia.id });
   const [name, setName] = useState('');
   const [playstyle, setPlaystyle] = useState<AgentPlaystyle>(DEFAULT_PLAYSTYLE);
   const [opening, setOpening] = useState('');
@@ -114,22 +115,24 @@ export function CreateAgentDialog({
       const factoryAddress = getAgentFactoryAddress();
       const usdcAddress = getUsdcAddress();
 
-      const approveHash = await writeContractAsync({
+      const approveHash = await writeContractMutateAsync({
         address: usdcAddress,
         abi: usdcAbi,
         functionName: 'approve',
         args: [factoryAddress, USDC_AMOUNT],
+        chainId: baseSepolia.id,
       });
 
       await publicClient.waitForTransactionReceipt({ hash: approveHash });
 
       // Step 4: Call AgentFactory.createAgent
       setStatusText('Deploying agent on-chain...');
-      const createHash = await writeContractAsync({
+      const createHash = await writeContractMutateAsync({
         address: factoryAddress,
         abi: agentFactoryAbi,
         functionName: 'createAgent',
         args: [name.trim(), symbol, USDC_AMOUNT, agentWalletAddress as `0x${string}`],
+        chainId: baseSepolia.id,
       });
 
       await publicClient.waitForTransactionReceipt({ hash: createHash });

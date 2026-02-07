@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
-import { useReadContract, useWriteContract } from 'wagmi';
+import { useConnection, useReadContract, useWriteContract } from 'wagmi';
 import { Plus, Droplets, LogOut, Loader2 } from 'lucide-react';
 import { CreateAgentDialog } from '@/components/marketplace/create-agent-dialog';
 import {
@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/button';
 import { useWallet } from '@/hooks/useWallet';
 import { getUsdcAddress } from '@/lib/contracts/config';
 import erc20Abi from '@/lib/contracts/erc20.json';
+import { baseSepolia } from 'wagmi/chains';
+import { useChainId, useSwitchChain } from 'wagmi';
 
 const USDC_DECIMALS = 6;
 const FAUCET_AMOUNT = BigInt(10000 * 10 ** USDC_DECIMALS); // 100 USDC
@@ -25,7 +27,10 @@ const FAUCET_AMOUNT = BigInt(10000 * 10 ** USDC_DECIMALS); // 100 USDC
 function formatUsdc(balance: bigint | undefined): string {
   if (balance === undefined) return '—';
   const n = Number(balance) / 10 ** USDC_DECIMALS;
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 /**
@@ -37,7 +42,19 @@ export function MarketplaceNav() {
   const { login, logout, authenticated, user } = usePrivy();
   const { address } = useWallet();
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const { isConnected } = useConnection();
+  const chainId = useChainId();
+  const { mutateAsync: switchChainAsync } = useSwitchChain();
 
+  useEffect(() => {
+    if (!isConnected) return;
+
+    if (chainId !== baseSepolia.id) {
+      switchChainAsync({ chainId: baseSepolia.id }).catch(() => {
+        // user rejected or wallet doesn't support programmatic switching
+      });
+    }
+  }, [isConnected, chainId, switchChainAsync]);
   const usdcAddress = (() => {
     try {
       return getUsdcAddress();
@@ -51,14 +68,16 @@ export function MarketplaceNav() {
     abi: erc20Abi as readonly unknown[],
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
+    chainId: baseSepolia.id,
   });
 
-  const { writeContractAsync, isPending: isFaucetPending } = useWriteContract();
+  const { mutateAsync: writeContractMutateAsync, isPending: isFaucetPending } =
+    useWriteContract();
 
   const handleFaucet = async () => {
     if (!usdcAddress) return;
     try {
-      await writeContractAsync({
+      await writeContractMutateAsync({
         address: usdcAddress,
         abi: erc20Abi as readonly unknown[],
         functionName: 'faucet',
@@ -134,7 +153,9 @@ export function MarketplaceNav() {
                           {formatUsdc(usdcBalance as bigint | undefined)} USDC
                         </div>
                         <DropdownMenuItem
-                          onClick={handleFaucet}
+                          onClick={() => {
+                            handleFaucet();
+                          }}
                           disabled={isFaucetPending}
                           className="flex items-center gap-2 cursor-pointer"
                         >
@@ -143,7 +164,7 @@ export function MarketplaceNav() {
                           ) : (
                             <Droplets className="h-4 w-4" />
                           )}
-                          {isFaucetPending ? 'Minting…' : 'Faucet (100 USDC)'}
+                          {isFaucetPending ? 'Minting…' : 'Faucet'}
                         </DropdownMenuItem>
                       </>
                     )}
