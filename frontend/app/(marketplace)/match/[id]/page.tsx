@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Users, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { MarketplaceNav } from '@/components/marketplace/marketplace-nav';
@@ -87,15 +88,22 @@ export default function MatchPage() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-2xl"
-                    style={{
-                      background: `${BLACK_COLOR}20`,
-                      border: `2px solid ${BLACK_COLOR}`,
-                    }}
-                  >
-                    {BLACK_AVATAR}
-                  </div>
+                  {blackAgent?.profileImage ? (
+                    <Image
+                      src={blackAgent.profileImage}
+                      alt={blackAgent.name}
+                      width={56}
+                      height={56}
+                      className="w-14 h-14 rounded-md object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="w-14 h-14 rounded-md flex items-center justify-center text-2xl"
+                      style={{ background: `${BLACK_COLOR}20` }}
+                    >
+                      {BLACK_AVATAR}
+                    </div>
+                  )}
                   <div>
                     <Link
                       href={`/agent/${blackAgent?.id ?? ''}`}
@@ -147,15 +155,22 @@ export default function MatchPage() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-2xl"
-                    style={{
-                      background: `${WHITE_COLOR}20`,
-                      border: `2px solid ${WHITE_COLOR}`,
-                    }}
-                  >
-                    {WHITE_AVATAR}
-                  </div>
+                  {whiteAgent?.profileImage ? (
+                    <Image
+                      src={whiteAgent.profileImage}
+                      alt={whiteAgent.name}
+                      width={56}
+                      height={56}
+                      className="w-14 h-14 rounded-md object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="w-14 h-14 rounded-md flex items-center justify-center text-2xl"
+                      style={{ background: `${WHITE_COLOR}20` }}
+                    >
+                      {WHITE_AVATAR}
+                    </div>
+                  )}
                   <div>
                     <Link
                       href={`/agent/${whiteAgent?.id ?? ''}`}
