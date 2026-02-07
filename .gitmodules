@@ -4,3 +4,12 @@
 [submodule "dapp/lib/openzeppelin-contracts-upgradeable"]
 	path = dapp/lib/openzeppelin-contracts-upgradeable
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable
+[submodule "dapp/lib/uniswap-hooks"]
+	path = dapp/lib/uniswap-hooks
+	url = https://github.com/OpenZeppelin/uniswap-hooks
+[submodule "dapp/lib/v4-core"]
+	path = dapp/lib/v4-core
+	url = https://github.com/uniswap/v4-core
+[submodule "dapp/lib/v4-periphery"]
+	path = dapp/lib/v4-periphery
+	url = https://github.com/uniswap/v4-periphery

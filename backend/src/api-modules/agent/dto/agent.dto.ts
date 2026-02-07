@@ -154,3 +154,21 @@ export class AgentMoveDto {
   @Max(60000)
   movetimeMs?: number;
 }
+
+export class ExecuteAgentActionDto {
+  @ApiProperty({
+    description: 'Natural language context/instructions for the agent action',
+    example: 'Claim trading fees for the agent wallet and report the result.',
+  })
+  @IsString()
+  context: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Optional system prompt to guide the agent behavior (advanced usage)',
+    example: 'You are a careful on-chain operator. Be concise.',
+  })
+  @IsOptional()
+  @IsString()
+  systemPrompt?: string;
+}

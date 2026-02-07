@@ -334,12 +334,13 @@ model Agent {
 - [x] Agent model + Agent API (`/agents/*`)
 - [x] Agent move selection via OpenRouter (`z-ai/glm-4.7-flash`) over Stockfish MultiPV candidates
 - [x] Match Service with SSE streaming (`/match/start`, `/match/:id/stream`)
+- [x] Frontend ↔ Backend SSE integration (arena page consuming match stream)
 
 ### In Progress
-- [ ] Frontend ↔ Backend SSE integration (arena page consuming match stream)
+- [ ] GOAT Integration
 
 ### Planned
-- [ ] Smart contracts (Foundry)
+- [ ] Full Contract -> Frontend Integration
 - [ ] Backend ↔ Dapp integration
 
 ---

@@ -42,6 +42,8 @@ export interface Agent {
   opening?: string | null;
   personality?: string | null;
   profileImage?: string | null;
+  /** Agent EOA wallet address (for on-chain actions; generated at creation) */
+  walletAddress?: string | null;
   elo: number;
   createdAt: string;
   updatedAt: string;

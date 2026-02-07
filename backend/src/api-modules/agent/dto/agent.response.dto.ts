@@ -29,6 +29,12 @@ export class AgentResponseDto {
   @ApiPropertyOptional({ example: 'https://example.com/avatar.png' })
   profileImage?: string | null;
 
+  @ApiPropertyOptional({
+    description: 'Agent wallet address (EOA for on-chain actions)',
+    example: '0x1234567890abcdef1234567890abcdef12345678',
+  })
+  walletAddress?: string | null;
+
   @ApiProperty({ example: 1000 })
   elo: number;
 
@@ -74,4 +80,12 @@ export class AgentMoveResponseDto {
     example: false,
   })
   fallbackUsed: boolean;
+}
+
+export class ExecuteAgentActionResponseDto {
+  @ApiProperty({
+    description: 'Tool/agent output text from the GOAT action execution',
+    example: 'Claimed rewards. Transaction hash: 0xabc123...',
+  })
+  result: string;
 }
