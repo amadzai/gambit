@@ -251,12 +251,12 @@ enum Winner {
 }
 
 model ChessGame {
-  id        String     @id @default(cuid())
-  fen       String     // Current board state
-  pgn       String     @default("") // Move history (movetext only; headers stripped)
-  turn      Color      // Whose turn
-  status    GameStatus // Game state
-  winner    Winner?    // Winner (set on terminal states)
+  id     String     @id @default(cuid())
+  fen    String
+  pgn    String     @default("")
+  turn   Color
+  status GameStatus
+  winner Winner?
 
   whiteAgentId String
   blackAgentId String
@@ -264,8 +264,8 @@ model ChessGame {
   whiteAgent Agent @relation("WhiteGames", fields: [whiteAgentId], references: [id])
   blackAgent Agent @relation("BlackGames", fields: [blackAgentId], references: [id])
 
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Playstyle {
@@ -277,6 +277,7 @@ enum Playstyle {
 model Agent {
   id           String    @id @default(cuid())
   name         String
+  creator      String?
   playstyle    Playstyle
   opening      String?
   personality  String?
