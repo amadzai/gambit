@@ -3,12 +3,14 @@ import {
   IsString,
   IsOptional,
   IsIn,
+  IsEnum,
   Matches,
   IsInt,
   Min,
   Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { GameStatus } from '../../../../generated/prisma/client.js';
 
 export class CreateGameDto {
   @ApiProperty({
@@ -57,6 +59,48 @@ export class MakeMoveDto {
     message: 'promotion must be one of: q, r, b, n',
   })
   promotion?: 'q' | 'r' | 'b' | 'n';
+}
+
+export class ListGamesQueryDto {
+  @ApiPropertyOptional({
+    description: 'Filter by game status',
+    enum: GameStatus,
+    example: 'ACTIVE',
+  })
+  @IsOptional()
+  @IsEnum(GameStatus)
+  status?: GameStatus;
+
+  @ApiPropertyOptional({
+    description: 'Filter by agent ID (matches either white or black side)',
+    example: 'clx1234567890',
+  })
+  @IsOptional()
+  @IsString()
+  agentId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Maximum number of games to return',
+    example: 20,
+    default: 50,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  take?: number;
+
+  @ApiPropertyOptional({
+    description: 'Number of games to skip (for pagination)',
+    example: 0,
+    default: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  skip?: number;
 }
 
 export class GetEngineMovesQueryDto {

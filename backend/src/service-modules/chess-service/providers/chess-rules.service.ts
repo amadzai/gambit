@@ -11,6 +11,7 @@ import {
   GameStatus,
   ChessGame,
   Winner,
+  Prisma,
 } from '../../../../generated/prisma/client.js';
 import { MakeMove, MoveResult } from '../interfaces/chess-rules.interface.js';
 import {
@@ -63,6 +64,36 @@ export class ChessRulesService {
 
       throw error;
     }
+  }
+
+  /**
+   * Get many games with optional filtering, ordering, and pagination.
+   */
+  async getGames(filters?: {
+    status?: GameStatus;
+    agentId?: string;
+    take?: number;
+    skip?: number;
+  }): Promise<ChessGame[]> {
+    const where: Prisma.ChessGameWhereInput = {};
+
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    if (filters?.agentId) {
+      where.OR = [
+        { whiteAgentId: filters.agentId },
+        { blackAgentId: filters.agentId },
+      ];
+    }
+
+    return this.prisma.chessGame.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: filters?.take,
+      skip: filters?.skip,
+    });
   }
 
   /**
