@@ -57,6 +57,7 @@ export class AgentController {
         encryptedPrivateKey,
       },
     });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { encryptedPrivateKey: _, ...response } = agent;
     return response as AgentResponseDto;
   }
