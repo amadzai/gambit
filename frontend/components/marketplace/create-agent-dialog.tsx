@@ -1,71 +1,99 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { X, Sparkles } from "lucide-react";
-import type { CreateAgentPlaystyle } from "@/types/agent";
+import { useState } from 'react';
+import { X, Sparkles, ChevronDown } from 'lucide-react';
+import axios from 'axios';
+import type { AgentPlaystyle, Agent } from '@/types/agent';
+import { apiService } from '@/utils/apiService';
+import { useWallet } from '@/hooks/useWallet';
 
-/** Payload passed to CreateAgentDialog onSubmit. Matches schema: playstyle, opening?, personality?, profileImage?. */
-export interface CreateAgentDialogSubmitPayload {
-  playstyle: CreateAgentPlaystyle;
-  opening?: string;
-  personality?: string;
-  profileImage?: string;
-}
-
-/**
- * Props for the create-agent modal. Control visibility with open/onClose; optionally handle submit with onSubmit.
- */
 export interface CreateAgentDialogProps {
-  /** Whether the dialog is visible. */
   open: boolean;
-  /** Called when the dialog should close (e.g. overlay or X). */
   onClose: () => void;
-  /** Optional. Called when "Create Agent & Deploy" is clicked. If returns a Promise, dialog closes after it resolves. */
-  onSubmit?: (payload: CreateAgentDialogSubmitPayload) => void | Promise<void>;
+  onCreated?: (agent: Agent) => void;
 }
 
-const PLAYSTYLES: { value: CreateAgentPlaystyle; name: string; desc: string }[] = [
-  { value: "AGGRESSIVE", name: "Aggressive", desc: "High-risk, high-reward tactics" },
-  { value: "DEFENSIVE", name: "Defensive", desc: "Focus on solid positioning" },
-  { value: "POSITIONAL", name: "Positional", desc: "Long-term strategic play" },
+const PLAYSTYLES: { value: AgentPlaystyle; name: string; desc: string }[] = [
+  {
+    value: 'AGGRESSIVE',
+    name: 'Aggressive',
+    desc: 'High-risk, high-reward tactics',
+  },
+  { value: 'DEFENSIVE', name: 'Defensive', desc: 'Focus on solid positioning' },
+  { value: 'POSITIONAL', name: 'Positional', desc: 'Long-term strategic play' },
 ];
 
-const DEFAULT_PLAYSTYLE: CreateAgentPlaystyle = "AGGRESSIVE";
+const SAN_OPENINGS = ['e4', 'd4', 'c4', 'Nf3', 'g3', 'b3', 'f4'] as const;
+
+const DEFAULT_PLAYSTYLE: AgentPlaystyle = 'AGGRESSIVE';
 
 /**
- * Modal for creating a new agent (playstyle, opening?, personality?, profileImage?). Use open/onClose; optional onSubmit to handle create.
+ * Modal for creating a new agent. Calls POST /agent on submit.
  */
-export function CreateAgentDialog({ open, onClose, onSubmit }: CreateAgentDialogProps) {
-  const [playstyle, setPlaystyle] = useState<CreateAgentPlaystyle>(DEFAULT_PLAYSTYLE);
-  const [opening, setOpening] = useState("");
-  const [personality, setPersonality] = useState("");
-  const [profileImage, setProfileImage] = useState("");
+export function CreateAgentDialog({
+  open,
+  onClose,
+  onCreated,
+}: CreateAgentDialogProps) {
+  const { address, authenticated, login } = useWallet();
+  const [name, setName] = useState('');
+  const [playstyle, setPlaystyle] = useState<AgentPlaystyle>(DEFAULT_PLAYSTYLE);
+  const [opening, setOpening] = useState('');
+  const [personality, setPersonality] = useState('');
+  const [profileImage, setProfileImage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setName('');
+    setPlaystyle(DEFAULT_PLAYSTYLE);
+    setOpening('');
+    setPersonality('');
+    setProfileImage('');
+    setError(null);
+  };
 
   const handleClose = () => {
-    setPlaystyle(DEFAULT_PLAYSTYLE);
-    setOpening("");
-    setPersonality("");
-    setProfileImage("");
+    resetForm();
     onClose();
   };
 
   const handleSubmit = async () => {
-    const payload: CreateAgentDialogSubmitPayload = {
-      playstyle,
-      opening: opening.trim() || undefined,
-      personality: personality.trim() || undefined,
-      profileImage: profileImage.trim() || undefined,
-    };
-    if (onSubmit) {
-      const result = onSubmit(payload);
-      if (result instanceof Promise) {
-        await result;
+    if (!authenticated) {
+      login();
+      return;
+    }
+
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      const agent = await apiService.agent.create({
+        name: name.trim(),
+        playstyle,
+        creator: address,
+        opening: opening || undefined,
+        personality: personality.trim() || undefined,
+        profileImage: profileImage.trim() || undefined,
+      });
+
+      onCreated?.(agent);
+
+      resetForm();
+      onClose();
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        const message = err.response?.data?.message ?? err.message;
+        setError(Array.isArray(message) ? message.join(', ') : message);
+      } else {
+        setError('Failed to create agent. Please try again.');
       }
-      handleClose();
-    } else {
-      handleClose();
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const isFormValid = name.trim().length > 0;
 
   if (!open) return null;
 
@@ -93,6 +121,20 @@ export function CreateAgentDialog({ open, onClose, onSubmit }: CreateAgentDialog
 
         <div className="space-y-5">
           <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Agent Name <span className="text-slate-500">(required)</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Magnus Bot, The Aggressor"
+              maxLength={30}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
+            />
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-slate-300 mb-3">
               Playstyle <span className="text-slate-500">(required)</span>
             </label>
@@ -104,11 +146,13 @@ export function CreateAgentDialog({ open, onClose, onSubmit }: CreateAgentDialog
                   onClick={() => setPlaystyle(strat.value)}
                   className={`p-4 rounded-lg border-2 text-left transition-all ${
                     playstyle === strat.value
-                      ? "border-violet-500 bg-violet-500/10"
-                      : "border-slate-700 bg-slate-800/50 hover:border-slate-600"
+                      ? 'border-violet-500 bg-violet-500/10'
+                      : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                   }`}
                 >
-                  <div className="font-medium text-white mb-1">{strat.name}</div>
+                  <div className="font-medium text-white mb-1">
+                    {strat.name}
+                  </div>
                   <div className="text-xs text-slate-400">{strat.desc}</div>
                 </button>
               ))}
@@ -119,13 +163,21 @@ export function CreateAgentDialog({ open, onClose, onSubmit }: CreateAgentDialog
             <label className="block text-sm font-medium text-slate-300 mb-2">
               Opening <span className="text-slate-500">(optional)</span>
             </label>
-            <input
-              type="text"
-              value={opening}
-              onChange={(e) => setOpening(e.target.value)}
-              placeholder="e.g. e4, Sicilian Defense"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
-            />
+            <div className="relative">
+              <select
+                value={opening}
+                onChange={(e) => setOpening(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-4 pr-10 py-3 text-white focus:outline-none focus:border-violet-500 transition-colors appearance-none"
+              >
+                <option value="">None</option>
+                {SAN_OPENINGS.map((move) => (
+                  <option key={move} value={move}>
+                    {move}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            </div>
           </div>
 
           <div>
@@ -161,12 +213,19 @@ export function CreateAgentDialog({ open, onClose, onSubmit }: CreateAgentDialog
             </p>
           </div>
 
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handleSubmit}
-            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3.5 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25"
+            disabled={!isFormValid || isSubmitting}
+            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3.5 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create Agent & Deploy
+            {isSubmitting ? 'Creating Agent...' : 'Create Agent & Deploy'}
           </button>
         </div>
       </div>

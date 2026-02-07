@@ -2,7 +2,6 @@ export { AgentCard, type AgentCardProps } from "./agent-card";
 export {
   CreateAgentDialog,
   type CreateAgentDialogProps,
-  type CreateAgentDialogSubmitPayload,
 } from "./create-agent-dialog";
 export { EvaluationBar, type EvaluationBarProps } from "./evaluation-bar";
 export { LiveMatchCard, type LiveMatchCardProps } from "./live-match-card";

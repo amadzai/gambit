@@ -27,6 +27,7 @@ export type AgentPlaystyle = 'AGGRESSIVE' | 'DEFENSIVE' | 'POSITIONAL';
 export interface CreateAgentRequest {
   name: string;
   playstyle: AgentPlaystyle;
+  creator?: string;
   opening?: string;
   personality?: string;
   profileImage?: string;
@@ -37,6 +38,7 @@ export interface Agent {
   id: string;
   name: string;
   playstyle: AgentPlaystyle;
+  creator?: string | null;
   opening?: string | null;
   personality?: string | null;
   profileImage?: string | null;
