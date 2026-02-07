@@ -50,6 +50,7 @@ class ViemEVMWalletClient extends EVMWalletClient {
         address: tx.to as `0x${string}`,
         abi: tx.abi as any,
         functionName: tx.functionName,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         args: tx.args as any,
         value: tx.value,
       });
@@ -72,6 +73,7 @@ class ViemEVMWalletClient extends EVMWalletClient {
       address: request.address as `0x${string}`,
       abi: request.abi as any,
       functionName: request.functionName,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       args: request.args as any,
     });
     return { value };
@@ -94,6 +96,7 @@ class ViemEVMWalletClient extends EVMWalletClient {
   async signTypedData(data: EVMTypedData): Promise<Signature> {
     const signature = await this.wallet.signTypedData({
       account: this.wallet.account!,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       domain: data.domain as any,
       types: data.types as any,
       primaryType: data.primaryType,
@@ -164,9 +167,7 @@ export class WalletManagerService {
     const evmWallet = new ViemEVMWalletClient(walletClient, publicClient);
     this.wallets.set(agentId, evmWallet);
 
-    this.logger.log(
-      `Wallet created for agent ${agentId}: ${account.address}`,
-    );
+    this.logger.log(`Wallet created for agent ${agentId}: ${account.address}`);
     return evmWallet;
   }
 
