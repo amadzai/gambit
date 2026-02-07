@@ -16,7 +16,7 @@ export const UNISWAP_V4 = {
 export function getContractAddresses() {
   return {
     AGENT_FACTORY: (process.env.AGENT_FACTORY_ADDRESS ?? '') as `0x${string}`,
-    BATTLE_MANAGER: (process.env.BATTLE_MANAGER_ADDRESS ?? '') as `0x${string}`,
+    MATCH_ENGINE: (process.env.MATCH_ENGINE_ADDRESS ?? '') as `0x${string}`,
     GAMBIT_HOOK: (process.env.GAMBIT_HOOK_ADDRESS ?? '') as `0x${string}`,
     USDC: (process.env.USDC_ADDRESS ?? '') as `0x${string}`,
   };

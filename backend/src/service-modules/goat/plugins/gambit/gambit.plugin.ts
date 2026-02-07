@@ -1,12 +1,12 @@
 import { type Chain, PluginBase } from '@goat-sdk/core';
 import { AgentFactoryService } from './agent-factory.service.js';
-import { BattleManagerService } from './battle-manager.service.js';
+import { MatchEngineService } from './match-engine.service.js';
 import { GambitHookService } from './gambit-hook.service.js';
 import { BASE_SEPOLIA_CHAIN_ID } from '../../constants/contracts.js';
 
 export type GambitPluginOptions = {
   agentFactoryAddress: `0x${string}`;
-  battleManagerAddress: `0x${string}`;
+  matchEngineAddress: `0x${string}`;
   gambitHookAddress: `0x${string}`;
 };
 
@@ -14,7 +14,7 @@ export class GambitPlugin extends PluginBase {
   constructor(options: GambitPluginOptions) {
     super('gambait', [
       new AgentFactoryService(options.agentFactoryAddress),
-      new BattleManagerService(options.battleManagerAddress),
+      new MatchEngineService(options.matchEngineAddress),
       new GambitHookService(options.gambitHookAddress),
     ]);
   }

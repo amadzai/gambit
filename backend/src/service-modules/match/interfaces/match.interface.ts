@@ -18,6 +18,8 @@ export interface MatchStartRequest {
   movetimeMs?: number;
   /** Delay between moves in milliseconds (for frontend animation pacing). Default 2000. */
   delayMs?: number;
+  /** On-chain match ID (bytes32) from MatchEngine contract, used for post-game settlement. */
+  onChainMatchId?: string;
 }
 
 /**

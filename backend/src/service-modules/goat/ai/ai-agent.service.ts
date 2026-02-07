@@ -28,7 +28,7 @@ export class AIAgentService {
       plugins: [
         gambit({
           agentFactoryAddress: addresses.AGENT_FACTORY,
-          battleManagerAddress: addresses.BATTLE_MANAGER,
+          matchEngineAddress: addresses.MATCH_ENGINE,
           gambitHookAddress: addresses.GAMBIT_HOOK,
         }),
         uniswapV4({
