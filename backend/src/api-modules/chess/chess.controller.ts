@@ -19,6 +19,7 @@ import { ChessRulesService } from '../../service-modules/chess-service/providers
 import {
   MakeMoveDto,
   CreateGameDto,
+  ListGamesQueryDto,
   GetEngineMovesQueryDto,
 } from './dto/chess.dto.js';
 import {
@@ -42,6 +43,24 @@ export class ChessController {
   })
   async createGame(@Body() dto: CreateGameDto): Promise<ChessGameResponseDto> {
     return this.chessRulesService.createGame(dto);
+  }
+
+  @Get('games')
+  @ApiOperation({ summary: 'List chess games with optional filters' })
+  @ApiResponse({
+    status: 200,
+    description: 'Games retrieved successfully',
+    type: [ChessGameResponseDto],
+  })
+  async listGames(
+    @Query() query: ListGamesQueryDto,
+  ): Promise<ChessGameResponseDto[]> {
+    return this.chessRulesService.getGames({
+      status: query.status,
+      agentId: query.agentId,
+      take: query.take ?? 50,
+      skip: query.skip ?? 0,
+    });
   }
 
   @Get('games/:id')

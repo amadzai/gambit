@@ -180,36 +180,46 @@ export class AgentService {
         san: meta?.san ?? null,
         isCapture: meta?.isCapture ?? null,
         givesCheck: meta?.givesCheck ?? null,
-        scoreCp: c.scoreCp ?? null,
         mate: c.mate ?? null,
       };
     });
 
+    // Shuffle candidates to eliminate position bias in LLM selection
+    const shuffled = [...enriched];
+    for (let j = shuffled.length - 1; j > 0; j--) {
+      const k = Math.floor(Math.random() * (j + 1));
+      [shuffled[j], shuffled[k]] = [shuffled[k], shuffled[j]];
+    }
+
     const playstyleGuidance = this.playstyleGuidance(agent.playstyle);
     const sideToMove = engine.fen.split(/\s+/)[1] === 'b' ? 'BLACK' : 'WHITE';
-    const allowedUcis = engine.candidates.map((c) => c.uci).join(', ');
-    const maxPick = engine.candidates.length;
     const pgnContext =
       pgn && pgn.trim() !== '' ? pgn.trim().slice(-600) : '(no moves yet)';
-    // const personalityHint =
-    //   agent.personality && agent.personality.trim() !== ''
-    //     ? `Personality: "${agent.personality.trim()}".`
-    //     : 'No personality.';
+    const personalityHint =
+      agent.personality && agent.personality.trim() !== ''
+        ? `Personality: "${agent.personality.trim()}".`
+        : '';
 
     const prompt = [
-      `You are a chess agent. Analyze the position from the FEN and PGN, then choose exactly ONE move from the provided candidates.`,
-      `It is ${sideToMove} to move.`,
-      `Current FEN: ${engine.fen}`,
-      `Current PGN (recent): ${pgnContext}`,
-      `Playstyle: ${agent.playstyle}. ${playstyleGuidance}`,
-      // personalityHint,
-      `You MUST choose by index from the candidate list.`,
-      `Valid pick values are integers from 1 to ${maxPick} (inclusive).`,
-      `Do NOT output a UCI move. Do NOT invent a new move. If unsure, pick 1.`,
-      `Return ONLY valid JSON like: {"pick": 3}`,
-      `Allowed UCI moves are: ${allowedUcis}`,
-      `Candidates (1 = best by engine, higher = weaker):`,
-      JSON.stringify(enriched),
+      `You are a chess agent with a ${agent.playstyle} playstyle. ${playstyleGuidance}`,
+      `Your playstyle is your PRIMARY decision criterion — choose the move that best embodies your playstyle, not necessarily the objectively strongest move.`,
+      personalityHint,
+      ``,
+      `Position context:`,
+      `- Side to move: ${sideToMove}`,
+      `- FEN: ${engine.fen}`,
+      `- PGN (recent): ${pgnContext}`,
+      ``,
+      `Candidate moves (presented in random order — ordering does NOT imply strength):`,
+      JSON.stringify(shuffled),
+      ``,
+      `Instructions:`,
+      `- Evaluate each candidate through the lens of your ${agent.playstyle} playstyle.`,
+      `- You MUST choose by the "i" value from the candidate list.`,
+      `- Valid pick values are: ${shuffled.map((c) => c.i).join(', ')}`,
+      `- Do NOT output a UCI move. Do NOT invent a new move.`,
+      `- If multiple moves equally match your playstyle, pick whichever feels most characteristic.`,
+      `- Return ONLY valid JSON like: {"pick": 3}`,
     ].join('\n');
 
     const content = await this.agentChatService.createChatCompletion({

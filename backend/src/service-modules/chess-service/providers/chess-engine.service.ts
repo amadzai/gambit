@@ -6,7 +6,7 @@ import {
 } from '../interfaces/chess-engine.interface.js';
 
 const DEFAULT_MULTI_PV = 10;
-const DEFAULT_MOVETIME_MS = 200;
+const DEFAULT_MOVETIME_MS = 1500;
 const ELO_MIN = 600;
 const ELO_MAX = 3000;
 const SKILL_LEVEL_MAX = 20;

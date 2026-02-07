@@ -33,6 +33,7 @@ gambit/
 - **Chess Rules**: chess.js
 - **Chess Engine**: Stockfish
 - **AI Agents**: OpenRouter (`z-ai/glm-4.7-flash`) for playstyle-based move selection
+- **Real-time**: Server-Sent Events (SSE) for match streaming
 
 ### Frontend (`/frontend`)
 
@@ -87,9 +88,23 @@ Market Cap = Chess ELO
 ```
 chess-service/
 ├── chess-service.module.ts      # Module definition
+├── interfaces/
+│   ├── chess-engine.interface.ts # Stockfish request/response types
+│   └── chess-rules.interface.ts  # Move execution types
 └── providers/
     ├── chess-rules.service.ts   # chess.js integration (rules, validation)
     └── chess-engine.service.ts  # Stockfish integration (move generation)
+```
+
+### Backend Match Service (`/backend/src/service-modules/match/`)
+
+```
+match/
+├── match.module.ts              # Module definition (imports AgentServiceModule + ChessServiceModule)
+├── interfaces/
+│   └── match.interface.ts       # MatchStartRequest, MatchMoveEvent types
+└── providers/
+    └── match.service.ts         # Match orchestration (game loop + SSE streaming)
 ```
 
 ### Move Generation Flow
@@ -100,7 +115,7 @@ chess-service/
 4. If the agent has a preferred opening in **UCI** (e.g. `e2e4`) and that move is present in the candidate list, we pick it immediately (no LLM call)
 5. Otherwise, the backend agent calls OpenRouter (`z-ai/glm-4.7-flash`) with the candidate list + agent metadata (playstyle/personality) and asks the LLM to pick **one** candidate **by index** (e.g. `{"pick": 3}`)
 6. Agent selects the candidate **UCI** move, converts it to `{ from, to, promotion? }`, then calls `ChessRulesService.makeMove(...)` to validate + persist the move (updates `fen`/`pgn` in DB)
-   - If the LLM response is invalid/unparseable/out of range, we fall back to Stockfish’s top candidate
+   - If the LLM response is invalid/unparseable/out of range, we fall back to Stockfish's top candidate
 
 Notes:
 - We keep things simple by assuming **only 1 live match at a time**, so a single Stockfish process with serialized requests is sufficient.
@@ -123,6 +138,21 @@ Responsibilities:
 - Multi-move candidate generation
 - Position analysis
 
+### Match Service (Orchestrator)
+
+Responsibilities:
+- Creates a game and kicks off a background loop that alternates agent moves
+- Streams each move to clients via **Server-Sent Events (SSE)** using NestJS `@Sse()` decorator
+- Holds active match streams in-memory as RxJS `Subject<MessageEvent>` keyed by `gameId`
+- Configurable defaults: `multiPv=10`, `movetimeMs=200`, `delayMs=2000` (inter-move delay for frontend animation)
+
+Match orchestration flow:
+1. `POST /match/start` → `MatchService.startMatch()` creates a game via `ChessRulesService.createGame()`, returns `{ gameId }` immediately
+2. Background loop (`runMatchLoop`) alternates calling `AgentService.makeAgentMove()` for white/black
+3. After each move, a `MatchMoveEvent` (FEN, PGN, SAN, UCI, status, agent info) is pushed into the SSE stream
+4. Client subscribes via `GET /match/:id/stream` (SSE) to receive events in real-time
+5. When game status is no longer `ACTIVE` (checkmate/stalemate/draw), the stream completes
+
 ---
 
 ## Match System
@@ -130,7 +160,7 @@ Responsibilities:
 ### Match Lifecycle
 
 1. **Match Creation**: Two agents agree to match, each stakes % of POL
-2. **Match Execution**: Chess match runs off-chain, moves validated by engine
+2. **Match Execution**: Chess match runs off-chain, moves validated by engine and streamed via SSE
 3. **Match Settlement**: Result verified, liquidity transferred
 
 ### Outcome Economics
@@ -175,7 +205,24 @@ Key endpoints:
 - `POST /agents/:id/move` make a move for that agent in a specific game
 
 Notes:
-- `/agents/:id/move` validates that the agent is assigned to the game (`whiteAgentId` / `blackAgentId`) and that it is that agent’s turn.
+- `/agents/:id/move` validates that the agent is assigned to the game (`whiteAgentId` / `blackAgentId`) and that it is that agent's turn.
+
+### Match Controller (`/backend/src/api-modules/match/`)
+
+All match-related endpoints route through:
+
+```
+/match/*
+```
+
+Key endpoints:
+- `POST /match/start` start a match between two agents (body: `{ whiteAgentId, blackAgentId, multiPv?, movetimeMs?, delayMs? }`)
+- `GET /match/:id/stream` SSE endpoint that streams `MatchMoveEvent` after each move until the game ends
+
+Notes:
+- The `start` endpoint returns `{ gameId }` immediately. The match loop runs in the background.
+- The `stream` endpoint uses NestJS `@Sse()` decorator and returns an `Observable<MessageEvent>`. The client subscribes with the browser `EventSource` API.
+- Each SSE event contains: `gameId`, `moveNumber`, `fen`, `pgn`, `san`, `selectedUci`, `turn`, `status`, `winner`, `agentId`, `agentName`, `fallbackUsed`.
 
 ---
 
@@ -285,9 +332,10 @@ model Agent {
 - [x] Chess Engine Service integrated (Stockfish MultiPV candidate move generation + debug endpoint)
 - [x] Agent model + Agent API (`/agents/*`)
 - [x] Agent move selection via OpenRouter (`z-ai/glm-4.7-flash`) over Stockfish MultiPV candidates
+- [x] Match Service with SSE streaming (`/match/start`, `/match/:id/stream`)
 
 ### In Progress
-- [ ] Match Service (game orchestration)
+- [ ] Frontend ↔ Backend SSE integration (arena page consuming match stream)
 
 ### Planned
 - [ ] Smart contracts (Foundry)
@@ -297,7 +345,7 @@ model Agent {
 
 ## Development Priorities
 
-### Phase 1: Chess Backend (Current)
+### Phase 1: Chess Backend
 1. Complete chess.js rules system
 2. Integrate Stockfish engine
 3. Implement move generation with skill levels
@@ -307,9 +355,10 @@ model Agent {
 2. Agent creation and management
 
 ### Phase 3: Match System
-1. Match orchestration
-2. Turn-based game loop
-3. Result determination
+1. Match orchestration service
+2. Turn-based game loop with alternating agent moves
+3. SSE streaming of match events to frontend
+4. Result determination (checkmate/stalemate/draw)
 
 ### Phase 4: Smart Contracts
 1. Agent token deployment
@@ -317,7 +366,7 @@ model Agent {
 3. Match settlement logic
 
 ### Phase 5: Integration
-1. Frontend ↔ Backend WebSocket connections
+1. Frontend ↔ Backend SSE connections (arena page)
 2. Backend ↔ Blockchain event listeners
 3. End-to-end match flow
 
@@ -364,6 +413,7 @@ forge test
 - OpenRouter (`z-ai/glm-4.7-flash`) - LLM-based move selection among Stockfish candidates
 - `@prisma/client` - Database ORM
 - `@nestjs/*` - Backend framework
+- `rxjs` - SSE streaming via RxJS Subjects/Observables
 
 ### Frontend
 - `chessboardjs` - Chess board UI

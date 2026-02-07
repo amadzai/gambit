@@ -7,7 +7,7 @@ export type ChessGameStatus =
   | 'DRAW'
   | 'RESIGNED';
 
-export type ChessWinner = 'WHITE' | 'BLACK' | 'DRAW' | null;
+export type ChessWinner = 'WHITE' | 'BLACK' | 'DRAW';
 
 export type ChessGame = {
   id: string;
@@ -15,88 +15,16 @@ export type ChessGame = {
   pgn: string;
   turn: ChessColor;
   status: ChessGameStatus;
-  winner?: ChessWinner;
+  winner?: ChessWinner | null;
   whiteAgentId: string;
   blackAgentId: string;
   createdAt: string; // ISO date string from backend JSON serialization
   updatedAt: string; // ISO date string from backend JSON serialization
 };
 
-export type ChessMovePromotion = 'q' | 'r' | 'b' | 'n';
-
-export type MakeMovePayload = {
-  from: string; // e.g. "e2"
-  to: string; // e.g. "e4"
-  promotion?: ChessMovePromotion; // pawn promotion piece
+export type ListGamesParams = {
+  status?: ChessGameStatus;
+  agentId?: string;
+  take?: number;
+  skip?: number;
 };
-
-export type ChessMove = {
-  from: string;
-  to: string;
-  san: string;
-  piece: string;
-  color: string;
-  captured?: string;
-  promotion?: string;
-  flags: string;
-};
-
-export type MoveResultResponse = {
-  success: boolean;
-  game: ChessGame;
-  move?: ChessMove;
-  isCheck: boolean;
-  isCheckmate: boolean;
-  isStalemate: boolean;
-  isDraw: boolean;
-  isGameOver: boolean;
-};
-
-export type GameStatusResponse = {
-  game: ChessGame;
-  isCheck: boolean;
-  isCheckmate: boolean;
-  isStalemate: boolean;
-  isDraw: boolean;
-  isGameOver: boolean;
-  legalMoveCount: number;
-};
-
-export type EngineCandidateMove = {
-  uci: string; // e.g. "e2e4", "e7e8q"
-  multipv: number; // 1-based
-  depth: number;
-  scoreCp?: number;
-  mate?: number;
-  pv?: string;
-};
-
-export type EngineMovesResponse = {
-  fen: string;
-  candidates: EngineCandidateMove[];
-};
-
-export type EngineMovesQuery = {
-  multiPv?: number;
-  elo?: number;
-  skill?: number;
-  movetimeMs?: number;
-  depth?: number;
-};
-
-/** Single legal move from GET /chess/games/:id/legal-moves */
-export type LegalMoveResponse = {
-  from: string;
-  to: string;
-  san: string;
-  piece: string;
-  captured?: string;
-  promotion?: string;
-  flags: string;
-};
-
-/** Response from POST /chess/games/:id/validate-move */
-export type ValidateMoveResponse = {
-  valid: boolean;
-};
-
