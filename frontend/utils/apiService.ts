@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { ChessGame, ListGamesParams } from '@/types/chess';
-import type { Agent, CreateAgentRequest } from '@/types/agent';
+import type { Agent, CreateAgentRequest, UpdateAgentRequest } from '@/types/agent';
 import type { StartMatchRequest, StartMatchResponse } from '@/types/match';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -29,6 +29,11 @@ export const apiService = {
   agent: {
     create: async (data: CreateAgentRequest): Promise<Agent> => {
       const res = await api.post<Agent>('/agent', data);
+      return res.data;
+    },
+
+    update: async (id: string, data: UpdateAgentRequest): Promise<Agent> => {
+      const res = await api.put<Agent>(`/agent/${id}`, data);
       return res.data;
     },
 
