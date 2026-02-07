@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../src/AgentFactory.sol";
 import "../src/BattleManager.sol";
-import "../src/GambAItHook.sol";
+import "../src/GambitHook.sol";
 import "../src/AgentToken.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IPositionManager} from "v4-periphery/src/interfaces/IPositionManager.sol";
@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract GambAItTest is Test {
     AgentFactory public factory;
     BattleManager public battleManager;
-    GambAItHook public hook;
+    GambitHook public hook;
     MockUSDC public usdc;
     IPoolManager public poolManager;
     IPositionManager public positionManager;
@@ -39,7 +39,6 @@ contract GambAItTest is Test {
         usdc = new MockUSDC();
 
         // Note: In a real test, you'd deploy actual PoolManager and PositionManager
-        // For hackathon, these would need to be deployed or mocked
         // poolManager = IPoolManager(address(new PoolManager()));
         // positionManager = IPositionManager(deployPositionManager());
 
@@ -67,7 +66,7 @@ contract GambAItTest is Test {
 
         // Deploy hook (would need correct address with permission bits in production)
         // For testing, we'd use vm.etch to place it at the right address
-        hook = new GambAItHook(
+        hook = new GambitHook(
             poolManager,
             address(factory),
             address(usdc),

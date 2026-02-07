@@ -18,7 +18,7 @@ import "./AgentFactory.sol";
  * @notice Uniswap V4 hook that splits swap fees: 3% to agent creator, 2% to protocol treasury
  * @dev Implements afterSwap hook to capture 5% of swap output and distribute fees
  */
-contract GambAItHook is IHooks, Ownable {
+contract GambitHook is IHooks, Ownable {
     using CurrencyLibrary for Currency;
     using BalanceDeltaLibrary for BalanceDelta;
 
