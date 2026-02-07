@@ -31,6 +31,7 @@ export function TradePanel({ price, agentName, holdings, onBuy, onSell }: TradeP
     else if (tradeType === "sell" && onSell) onSell(tradeAmount);
   };
 
+  const hasHandler = tradeType === "buy" ? !!onBuy : !!onSell;
   const sharesDisplay = holdings?.shares ?? 12.5;
   const valueDisplay = holdings != null ? holdings.value : 12.5 * price;
 
@@ -104,10 +105,14 @@ export function TradePanel({ price, agentName, holdings, onBuy, onSell }: TradeP
       <button
         type="button"
         onClick={handleTrade}
+        disabled={!hasHandler}
+        title={!hasHandler ? "Pass onBuy/onSell to enable" : undefined}
         className={`w-full py-3.5 rounded-lg font-medium transition-all ${
-          tradeType === "buy"
-            ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg shadow-green-500/25"
-            : "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg shadow-red-500/25"
+          !hasHandler
+            ? "bg-slate-700 text-slate-400 cursor-not-allowed"
+            : tradeType === "buy"
+              ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg shadow-green-500/25"
+              : "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg shadow-red-500/25"
         }`}
       >
         {tradeType === "buy" ? "Buy Shares" : "Sell Shares"}

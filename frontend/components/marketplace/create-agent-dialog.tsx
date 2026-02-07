@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { X, Sparkles } from "lucide-react";
+import type { CreateAgentPlaystyle } from "@/types/agent";
 
-/** Payload passed to CreateAgentDialog onSubmit. Amount is the raw deposit string (ETH). */
+/** Payload passed to CreateAgentDialog onSubmit. Matches schema: playstyle, opening?, personality?, profileImage?. */
 export interface CreateAgentDialogSubmitPayload {
-  name: string;
-  deposit: string;
-  strategy: string;
+  playstyle: CreateAgentPlaystyle;
+  opening?: string;
+  personality?: string;
+  profileImage?: string;
 }
 
 /**
@@ -22,35 +24,45 @@ export interface CreateAgentDialogProps {
   onSubmit?: (payload: CreateAgentDialogSubmitPayload) => void | Promise<void>;
 }
 
-const strategies = [
-  { id: "aggressive", name: "Aggressive", desc: "High-risk, high-reward tactics" },
-  { id: "defensive", name: "Defensive", desc: "Focus on solid positioning" },
-  { id: "balanced", name: "Balanced", desc: "Mix of attack and defense" },
-  { id: "positional", name: "Positional", desc: "Long-term strategic play" },
+const PLAYSTYLES: { value: CreateAgentPlaystyle; name: string; desc: string }[] = [
+  { value: "AGGRESSIVE", name: "Aggressive", desc: "High-risk, high-reward tactics" },
+  { value: "DEFENSIVE", name: "Defensive", desc: "Focus on solid positioning" },
+  { value: "POSITIONAL", name: "Positional", desc: "Long-term strategic play" },
 ];
 
+const DEFAULT_PLAYSTYLE: CreateAgentPlaystyle = "AGGRESSIVE";
+
 /**
- * Modal for creating a new agent (name, deposit, strategy). Use open/onClose to control; optional onSubmit to handle create.
+ * Modal for creating a new agent (playstyle, opening?, personality?, profileImage?). Use open/onClose; optional onSubmit to handle create.
  */
 export function CreateAgentDialog({ open, onClose, onSubmit }: CreateAgentDialogProps) {
-  const [name, setName] = useState("");
-  const [deposit, setDeposit] = useState("");
-  const [strategy, setStrategy] = useState("aggressive");
+  const [playstyle, setPlaystyle] = useState<CreateAgentPlaystyle>(DEFAULT_PLAYSTYLE);
+  const [opening, setOpening] = useState("");
+  const [personality, setPersonality] = useState("");
+  const [profileImage, setProfileImage] = useState("");
 
   const handleClose = () => {
-    setName("");
-    setDeposit("");
-    setStrategy("aggressive");
+    setPlaystyle(DEFAULT_PLAYSTYLE);
+    setOpening("");
+    setPersonality("");
+    setProfileImage("");
     onClose();
   };
 
   const handleSubmit = async () => {
-    const payload: CreateAgentDialogSubmitPayload = { name, deposit, strategy };
+    const payload: CreateAgentDialogSubmitPayload = {
+      playstyle,
+      opening: opening.trim() || undefined,
+      personality: personality.trim() || undefined,
+      profileImage: profileImage.trim() || undefined,
+    };
     if (onSubmit) {
       const result = onSubmit(payload);
       if (result instanceof Promise) {
         await result;
       }
+      handleClose();
+    } else {
       handleClose();
     }
   };
@@ -81,58 +93,65 @@ export function CreateAgentDialog({ open, onClose, onSubmit }: CreateAgentDialog
 
         <div className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Agent Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter agent name..."
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Initial Deposit (ETH)
-            </label>
-            <input
-              type="number"
-              value={deposit}
-              onChange={(e) => setDeposit(e.target.value)}
-              placeholder="0.00"
-              step="0.01"
-              min="0"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
-            />
-            <p className="text-xs text-slate-400 mt-2">
-              Minimum deposit: 0.1 ETH
-            </p>
-          </div>
-
-          <div>
             <label className="block text-sm font-medium text-slate-300 mb-3">
-              Playing Style
+              Playstyle <span className="text-slate-500">(required)</span>
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              {strategies.map((strat) => (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {PLAYSTYLES.map((strat) => (
                 <button
-                  key={strat.id}
-                  onClick={() => setStrategy(strat.id)}
+                  key={strat.value}
+                  type="button"
+                  onClick={() => setPlaystyle(strat.value)}
                   className={`p-4 rounded-lg border-2 text-left transition-all ${
-                    strategy === strat.id
+                    playstyle === strat.value
                       ? "border-violet-500 bg-violet-500/10"
                       : "border-slate-700 bg-slate-800/50 hover:border-slate-600"
                   }`}
                 >
-                  <div className="font-medium text-white mb-1">
-                    {strat.name}
-                  </div>
+                  <div className="font-medium text-white mb-1">{strat.name}</div>
                   <div className="text-xs text-slate-400">{strat.desc}</div>
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Opening <span className="text-slate-500">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={opening}
+              onChange={(e) => setOpening(e.target.value)}
+              placeholder="e.g. e4, Sicilian Defense"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Personality <span className="text-slate-500">(optional)</span>
+            </label>
+            <textarea
+              value={personality}
+              onChange={(e) => setPersonality(e.target.value)}
+              placeholder="Describe your agent's style or character..."
+              rows={3}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Profile Image <span className="text-slate-500">(optional)</span>
+            </label>
+            <input
+              type="url"
+              value={profileImage}
+              onChange={(e) => setProfileImage(e.target.value)}
+              placeholder="https://..."
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
+            />
           </div>
 
           <div className="bg-violet-500/10 border border-violet-500/30 rounded-lg p-4">

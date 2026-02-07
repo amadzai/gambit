@@ -33,7 +33,7 @@ Feature components by area. Types live in `types/` (see `types/agent.ts`, `types
 | Component | Purpose | Main props | Types |
 |-----------|---------|------------|--------|
 | **AgentCard** | Agent summary card with chart, price, win rate; links to agent page | `agent` | `MarketplaceAgent` from `types/marketplace` |
-| **CreateAgentDialog** | Modal to create agent (name, deposit, strategy) | `open`, `onClose`, `onSubmit?` | — |
+| **CreateAgentDialog** | Modal to create agent (playstyle, opening?, personality?, profileImage?) | `open`, `onClose`, `onSubmit?` | `CreateAgentPlaystyle` from `types/agent` |
 | **EvaluationBar** | Vertical bar for position evaluation (white vs black) | `evaluation` | — |
 | **LiveMatchCard** | Card for one live match (players, mini board, link to match) | `match` | `LiveMatchData` from `types/marketplace` |
 | **MarketplaceLeaderboard** | Leaderboard table by ELO, win rate, matches | `agents` | `MarketplaceAgent[]` from `types/marketplace` |
