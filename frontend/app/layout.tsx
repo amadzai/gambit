@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "gambAIt - Chess Agent Launchpad",
+  title: "Gambit - Chess Agent Launchpad",
   description: "Create, train, and compete with AI chess agents",
 };
 
