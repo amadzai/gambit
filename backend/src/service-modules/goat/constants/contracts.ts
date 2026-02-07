@@ -29,7 +29,7 @@ export const baseSepolia: Chain = {
   ...baseSepoliaChain,
   rpcUrls: {
     default: {
-      http: [process.env.BASE_SEPOLIA_RPC_URL ?? 'https://sepolia.base.org'],
+      http: [process.env.RPC_URL ?? 'https://sepolia.base.org'],
     },
   },
 };
