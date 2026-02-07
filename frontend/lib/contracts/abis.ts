@@ -30,3 +30,31 @@ export const erc20Abi = [
 
 // Add more ABIs per contract; then use in hooks/contracts/*.ts
 export type Erc20Abi = typeof erc20Abi;
+
+export const agentFactoryAbi = [
+  {
+    type: 'function',
+    name: 'createAgent',
+    inputs: [
+      { name: 'name', type: 'string' },
+      { name: 'symbol', type: 'string' },
+      { name: 'usdcAmount', type: 'uint256' },
+      { name: 'agentWallet', type: 'address' },
+    ],
+    outputs: [{ name: 'tokenAddress', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+] as const;
+
+export const usdcAbi = [
+  {
+    type: 'function',
+    name: 'approve',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
+] as const;

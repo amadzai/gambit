@@ -46,6 +46,11 @@ export const apiService = {
       const res = await api.get<Agent>(`/agent/${id}`);
       return res.data;
     },
+
+    registerToken: async (id: string, txHash: string): Promise<Agent> => {
+      const res = await api.post<Agent>(`/agent/${id}/register-token`, { txHash });
+      return res.data;
+    },
   },
 
   match: {

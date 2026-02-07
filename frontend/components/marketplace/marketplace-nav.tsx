@@ -1,12 +1,25 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { usePrivy } from "@privy-io/react-auth";
-import { Plus } from "lucide-react";
-import { CreateAgentDialog } from "@/components/marketplace/create-agent-dialog";
+import { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { usePathname } from 'next/navigation';
+import { usePrivy } from '@privy-io/react-auth';
+import { useChainId } from 'wagmi';
+import { Plus, Droplets, LogOut } from 'lucide-react';
+import { CreateAgentDialog } from '@/components/marketplace/create-agent-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+
+const FAUCET_URLS: Partial<Record<number, string>> = {
+  11155111: 'https://www.alchemy.com/faucets/ethereum-sepolia',
+  84532: 'https://www.alchemy.com/faucets/base-sepolia',
+};
 
 /**
  * Marketplace header with logo, Dashboard/My Dashboard links, Create Agent button, and wallet connect.
@@ -14,12 +27,13 @@ import { CreateAgentDialog } from "@/components/marketplace/create-agent-dialog"
  */
 export function MarketplaceNav() {
   const pathname = usePathname();
+  const chainId = useChainId();
   const { login, logout, authenticated, user } = usePrivy();
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const navLinks = [
-    { href: "/dashboard", label: "Marketplace" },
-    { href: "/my-dashboard", label: "Dashboard" },
+    { href: '/dashboard', label: 'Marketplace' },
+    { href: '/my-dashboard', label: 'Dashboard' },
   ];
 
   return (
@@ -44,8 +58,8 @@ export function MarketplaceNav() {
                   href={link.href}
                   className={
                     pathname === link.href
-                      ? "text-violet-400 font-medium"
-                      : "text-slate-300 hover:text-white transition-colors"
+                      ? 'text-violet-400 font-medium'
+                      : 'text-slate-300 hover:text-white transition-colors'
                   }
                 >
                   {link.label}
@@ -59,27 +73,55 @@ export function MarketplaceNav() {
                 <Plus className="w-4 h-4" />
                 Create Agent
               </button>
-            {authenticated ? (
-              <button
-                onClick={logout}
-                className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-700 transition-colors"
-              >
-                {user?.wallet?.address
-                  ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}`
-                  : "Connected"}
-              </button>
-            ) : (
-              <button
-                onClick={login}
-                className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all"
-              >
-                Connect Wallet
-              </button>
-            )}
+              {authenticated ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="bg-slate-800 border-slate-700 text-white px-6 py-2.5 rounded-lg text-sm hover:bg-slate-700 hover:text-white"
+                    >
+                      {user?.wallet?.address
+                        ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}`
+                        : 'Connected'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-52 bg-slate-900 border-slate-700"
+                  >
+                    <DropdownMenuItem asChild>
+                      <a
+                        href={FAUCET_URLS[chainId]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <Droplets className="h-4 w-4" />
+                        Faucet
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => logout()}
+                      className="flex items-center gap-2 text-red-400 focus:text-red-400 focus:bg-red-500/10"
+                      variant="destructive"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Disconnect
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <button
+                  onClick={login}
+                  className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all"
+                >
+                  Connect Wallet
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
 
       <CreateAgentDialog
         open={createModalOpen}

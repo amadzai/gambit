@@ -73,4 +73,18 @@ export const agentFactoryAbi = [
     ],
     stateMutability: 'view',
   },
+  {
+    type: 'event',
+    name: 'AgentCreated',
+    inputs: [
+      { name: 'tokenAddress', type: 'address', indexed: true },
+      { name: 'name', type: 'string', indexed: false },
+      { name: 'symbol', type: 'string', indexed: false },
+      { name: 'creator', type: 'address', indexed: true },
+      { name: 'agentWallet', type: 'address', indexed: true },
+      { name: 'userPositionId', type: 'uint256', indexed: false },
+      { name: 'agentPositionId', type: 'uint256', indexed: false },
+      { name: 'usdcAmount', type: 'uint256', indexed: false },
+    ],
+  },
 ] as const;
