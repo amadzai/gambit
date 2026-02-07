@@ -42,7 +42,6 @@ export class MatchService {
       `Match started gameId=${game.id} white=${req.whiteAgentId} black=${req.blackAgentId}`,
     );
 
-    // Fire-and-forget: the loop runs in the background and pushes events into the subject.
     this.runMatchLoop(game.id, req.whiteAgentId, req.blackAgentId, {
       multiPv: req.multiPv,
       movetimeMs: req.movetimeMs,
@@ -151,7 +150,6 @@ export class MatchService {
 
         subject.next({ data: event } as MessageEvent);
 
-        // If the game ended with this move, exit immediately (no delay).
         if (result.moveResult.game.status !== GameStatus.ACTIVE) {
           this.logger.log(
             `Match ended gameId=${gameId} status=${result.moveResult.game.status} winner=${result.moveResult.game.winner ?? 'none'} halfMoves=${halfMoveCount}`,
