@@ -36,8 +36,8 @@ contract Deploy is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address resultSigner = vm.envAddress("RESULT_SIGNER");
-        address treasury = vm.envAddress("TREASURY");
+        address resultSigner = vm.addr(deployerPrivateKey);
+        address treasury = vm.addr(deployerPrivateKey);
         uint256 creationFee = vm.envOr("CREATION_FEE", uint256(100e6));
 
         vm.startBroadcast(deployerPrivateKey);
