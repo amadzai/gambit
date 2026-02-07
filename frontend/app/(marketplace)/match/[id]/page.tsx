@@ -39,6 +39,7 @@ export default function MatchPage() {
     currentHalfMoveIndex,
     boardFen,
     currentEvaluation,
+    lastMoveSquares,
     isAtLatest,
     goToHalfMove,
     goForward,
@@ -140,6 +141,7 @@ export default function MatchPage() {
                   <MatchChessBoard
                     position={boardFen}
                     defaultPosition={MATCH_PAGE_DEFAULT_POSITION}
+                    highlightSquares={lastMoveSquares}
                   />
                 )}
               </div>

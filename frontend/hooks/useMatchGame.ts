@@ -16,6 +16,10 @@ import type { MatchMove } from '@/types/marketplace';
 interface HalfMove {
   san: string;
   fen: string;
+  /** Square the piece moved from (e.g. "e2"). */
+  from: string;
+  /** Square the piece moved to (e.g. "e4"). */
+  to: string;
   /** Full-move number (1-based, same for white & black of the same turn). */
   moveNumber: number;
   color: 'white' | 'black';
@@ -52,6 +56,8 @@ export interface UseMatchGameResult {
   boardFen: string;
   /** Evaluation at the current position (pawn units, clamped -10 to +10). */
   currentEvaluation: number;
+  /** The from/to squares of the currently viewed move, for board highlighting. Null at starting position. */
+  lastMoveSquares: { from: string; to: string } | null;
   /** True when viewing the latest move (controls live auto-advance). */
   isAtLatest: boolean;
   /** Jump to a specific half-move index. */
@@ -92,10 +98,12 @@ function parsePgnToHalfMoves(pgn: string): HalfMove[] {
   const halfMoves: HalfMove[] = [];
 
   for (let i = 0; i < sanMoves.length; i++) {
-    replayer.move(sanMoves[i]);
+    const result = replayer.move(sanMoves[i]);
     halfMoves.push({
       san: sanMoves[i],
       fen: replayer.fen(),
+      from: result.from,
+      to: result.to,
       moveNumber: Math.floor(i / 2) + 1,
       color: i % 2 === 0 ? 'white' : 'black',
       evalCp: null,
@@ -159,6 +167,14 @@ export function useMatchGame(gameId: string | null): UseMatchGameResult {
   const boardFen = useMemo(() => {
     if (currentHalfMoveIndex === 0) return STARTING_FEN;
     return halfMoves[currentHalfMoveIndex - 1]?.fen ?? STARTING_FEN;
+  }, [currentHalfMoveIndex, halfMoves]);
+
+  /** The from/to squares of the currently viewed move, for board highlighting. */
+  const lastMoveSquares = useMemo<{ from: string; to: string } | null>(() => {
+    if (currentHalfMoveIndex === 0) return null;
+    const hm = halfMoves[currentHalfMoveIndex - 1];
+    if (!hm) return null;
+    return { from: hm.from, to: hm.to };
   }, [currentHalfMoveIndex, halfMoves]);
 
   const currentEvaluation = useMemo(() => {
@@ -287,9 +303,15 @@ export function useMatchGame(gameId: string | null): UseMatchGameResult {
         const color: 'white' | 'black' =
           moveEvent.turn === 'BLACK' ? 'white' : 'black';
 
+        // Extract from/to squares from UCI notation (e.g. "g1f3" → from="g1", to="f3")
+        const uciFrom = moveEvent.selectedUci.slice(0, 2);
+        const uciTo = moveEvent.selectedUci.slice(2, 4);
+
         const newHalfMove: HalfMove = {
           san: moveEvent.san,
           fen: moveEvent.fen,
+          from: uciFrom,
+          to: uciTo,
           moveNumber: moveEvent.moveNumber,
           color,
           evalCp: moveEvent.evalCp,
@@ -363,6 +385,7 @@ export function useMatchGame(gameId: string | null): UseMatchGameResult {
     currentHalfMoveIndex,
     boardFen,
     currentEvaluation,
+    lastMoveSquares,
     isAtLatest,
     goToHalfMove,
     goForward,
