@@ -60,6 +60,7 @@ model Agent {
   elo                 Int       @default(1000)
   walletAddress       String?
   encryptedPrivateKey String?
+  tokenAddress        String?
 
   whiteGames ChessGame[] @relation("WhiteGames")
   blackGames ChessGame[] @relation("BlackGames")
