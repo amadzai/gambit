@@ -34,3 +34,24 @@ export type AgentMoveResponse = {
   /** True when the LLM output was invalid and we used a fallback move. */
   fallbackUsed: boolean;
 };
+
+/**
+ * Computed game statistics for an agent.
+ */
+export type AgentStats = {
+  /** Number of games won. */
+  wins: number;
+  /** Number of games lost. */
+  losses: number;
+  /** Number of games drawn. */
+  draws: number;
+  /** Total completed games (wins + losses + draws). */
+  totalGames: number;
+  /** Win rate as a percentage (0–100). 0 when no completed games. */
+  winRate: number;
+};
+
+/**
+ * Agent record enriched with computed game statistics.
+ */
+export type AgentWithStats = Agent & AgentStats;
