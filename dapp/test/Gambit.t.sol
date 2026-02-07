@@ -67,7 +67,7 @@ contract GambAItTest is Test {
         // Deploy hook (would need correct address with permission bits in production)
         // For testing, we'd use vm.etch to place it at the right address
         hook = new GambitHook(
-            poolManager,
+            address(poolManager),
             address(factory),
             address(usdc),
             treasury

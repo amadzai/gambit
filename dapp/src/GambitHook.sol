@@ -8,7 +8,6 @@ import {PoolKey} from "v4-core/types/PoolKey.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "v4-core/types/BalanceDelta.sol";
 import {BeforeSwapDelta} from "v4-core/types/BeforeSwapDelta.sol";
 import {Currency, CurrencyLibrary} from "v4-core/types/Currency.sol";
-import {SwapParams, ModifyLiquidityParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "./AgentFactory.sol";
@@ -86,7 +85,7 @@ contract GambitHook is IHooks, Ownable {
     function afterSwap(
         address,
         PoolKey calldata key,
-        SwapParams calldata params,
+        IPoolManager.SwapParams calldata params,
         BalanceDelta delta,
         bytes calldata
     ) external onlyPoolManager returns (bytes4, int128) {
@@ -202,7 +201,7 @@ contract GambitHook is IHooks, Ownable {
         revert HookNotImplemented();
     }
 
-    function beforeAddLiquidity(address, PoolKey calldata, ModifyLiquidityParams calldata, bytes calldata)
+    function beforeAddLiquidity(address, PoolKey calldata, IPoolManager.ModifyLiquidityParams calldata, bytes calldata)
         external
         pure
         returns (bytes4)
@@ -213,7 +212,7 @@ contract GambitHook is IHooks, Ownable {
     function afterAddLiquidity(
         address,
         PoolKey calldata,
-        ModifyLiquidityParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
         BalanceDelta,
         bytes calldata
@@ -221,7 +220,7 @@ contract GambitHook is IHooks, Ownable {
         revert HookNotImplemented();
     }
 
-    function beforeRemoveLiquidity(address, PoolKey calldata, ModifyLiquidityParams calldata, bytes calldata)
+    function beforeRemoveLiquidity(address, PoolKey calldata, IPoolManager.ModifyLiquidityParams calldata, bytes calldata)
         external
         pure
         returns (bytes4)
@@ -232,7 +231,7 @@ contract GambitHook is IHooks, Ownable {
     function afterRemoveLiquidity(
         address,
         PoolKey calldata,
-        ModifyLiquidityParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
         BalanceDelta,
         bytes calldata
@@ -240,7 +239,7 @@ contract GambitHook is IHooks, Ownable {
         revert HookNotImplemented();
     }
 
-    function beforeSwap(address, PoolKey calldata, SwapParams calldata, bytes calldata)
+    function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata)
         external
         pure
         returns (bytes4, BeforeSwapDelta, uint24)
