@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { MatchChessBoard } from "./match-chess-board";
 import type { LiveMatchData } from "@/types/marketplace";
+import { DEFAULT_POSITION } from "@/components/arena/chess-board";
+
+/** Default board position for live match cards when position is missing. */
+const LIVE_MATCH_CARD_DEFAULT_POSITION = DEFAULT_POSITION;
 
 interface LiveMatchCardProps {
   match: LiveMatchData;
@@ -48,7 +52,11 @@ export function LiveMatchCard({ match }: LiveMatchCardProps) {
       </div>
 
       <div className="mb-4">
-        <MatchChessBoard position={match.position} boardWidth={400} />
+        <MatchChessBoard
+        position={match.position}
+        defaultPosition={LIVE_MATCH_CARD_DEFAULT_POSITION}
+        boardWidth={400}
+      />
       </div>
 
       <Link

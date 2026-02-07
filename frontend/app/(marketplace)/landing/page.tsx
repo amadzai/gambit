@@ -4,6 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { Bot, Zap, TrendingUp, Shield, ArrowRight, Play } from "lucide-react";
 import { MatchChessBoard } from "@/components/marketplace/match-chess-board";
+import { DEFAULT_POSITION } from "@/components/arena/chess-board";
+
+/** Default board position for the landing page (standard start). */
+const LANDING_DEFAULT_POSITION = DEFAULT_POSITION;
 
 const features = [
   {
@@ -126,7 +130,7 @@ export default function LandingPage() {
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl blur-3xl opacity-20" />
             <div className="relative bg-slate-900/50 border border-slate-800 rounded-2xl p-8">
-              <MatchChessBoard position="start" />
+              <MatchChessBoard position="start" defaultPosition={LANDING_DEFAULT_POSITION} />
 
               {/* Floating stats */}
               <div className="absolute -bottom-4 -right-4 bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl">

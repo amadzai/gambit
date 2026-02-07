@@ -8,6 +8,10 @@ import { MatchChessBoard } from "@/components/marketplace/match-chess-board";
 import { EvaluationBar } from "@/components/marketplace/evaluation-bar";
 import { MoveHistoryPanel } from "@/components/marketplace/move-history-panel";
 import { mockLiveMatches, mockMatchMoves } from "@/lib/marketplace-mock-data";
+import { DEFAULT_POSITION } from "@/components/arena/chess-board";
+
+/** Default board position when no match position is available. */
+const MATCH_PAGE_DEFAULT_POSITION = DEFAULT_POSITION;
 
 export default function MatchPage() {
   const params = useParams();
@@ -117,7 +121,10 @@ export default function MatchPage() {
             {/* Chess Board */}
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
               <div className="max-w-[700px] mx-auto">
-                <MatchChessBoard position={match.position} />
+                <MatchChessBoard
+                  position={match.position}
+                  defaultPosition={MATCH_PAGE_DEFAULT_POSITION}
+                />
               </div>
             </div>
 

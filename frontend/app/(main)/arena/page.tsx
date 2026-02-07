@@ -23,6 +23,9 @@ const DEMO_FENS = [
   "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
 ];
 
+/** Default board position for the arena page (start of demo). */
+const ARENA_DEFAULT_POSITION = DEMO_FENS[0];
+
 function ArenaContent() {
   const searchParams = useSearchParams();
   const challengeId = searchParams.get("challenge");
@@ -81,7 +84,11 @@ function ArenaContent() {
 
           {/* Chessboard */}
           <div className="order-1 lg:order-2 space-y-4">
-            <LiveChessBoard position={boardPosition} onMove={handleMove} />
+            <LiveChessBoard
+              position={boardPosition}
+              defaultPosition={ARENA_DEFAULT_POSITION}
+              onMove={handleMove}
+            />
 
             {status === "pending" && (
               <div className="flex justify-center">
