@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { Hex } from 'viem';
 import { WalletManagerService } from './wallet/wallet-manager.service.js';
 import { AIAgentService } from './ai/ai-agent.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 
 @Injectable()
 export class GoatService {
@@ -10,6 +11,7 @@ export class GoatService {
   constructor(
     private readonly walletManager: WalletManagerService,
     private readonly aiAgent: AIAgentService,
+    private readonly prisma: PrismaService,
   ) {}
 
   initializeAgentWallet(agentId: string, privateKey: Hex) {
@@ -23,10 +25,45 @@ export class GoatService {
   ): Promise<string> {
     const wallet = this.walletManager.getWallet(agentId);
     if (!wallet) {
-      throw new Error(
-        `Wallet not initialized for agent ${agentId}. Call initializeAgentWallet first.`,
-      );
+      const agent = await this.prisma.agent.findUnique({
+        where: {
+          id: agentId,
+        },
+        select: {
+          encryptedPrivateKey: true,
+        },
+      });
+
+      if (agent && agent.encryptedPrivateKey) {
+        const decryptedPrivateKey = this.walletManager.decryptPrivateKey(
+          agent.encryptedPrivateKey,
+        );
+
+        this.initializeAgentWallet(agentId, decryptedPrivateKey as Hex);
+      } else {
+        const { address: walletAddress, privateKey } =
+          this.walletManager.generateNewKeyPair();
+        const encryptedPrivateKey =
+          this.walletManager.encryptPrivateKey(privateKey);
+
+        await this.prisma.agent.update({
+          where: {
+            id: agentId,
+          },
+          data: {
+            walletAddress,
+            encryptedPrivateKey,
+          },
+        });
+
+        this.initializeAgentWallet(agentId, privateKey);
+      }
+
+      const wallet = this.walletManager.getWallet(agentId);
+
+      return this.aiAgent.executeAgentDecision(wallet!, context, systemPrompt);
     }
+
     return this.aiAgent.executeAgentDecision(wallet, context, systemPrompt);
   }
 
