@@ -227,29 +227,14 @@ export class AgentService {
       `- Return ONLY valid JSON like: {"pick": 3}`,
     ].join('\n');
 
-    // const systemPrompt =
-    //   'You must output only JSON. Do not include code fences or extra text. Output must be like {"pick": <number>}.';
+    const systemPrompt =
+      'You must output only JSON. Do not include code fences or extra text. Output must be like {"pick": <number>}.';
 
-    // const content = await this.goatService.executeAgentAction(
-    //   agent.id,
-    //   prompt,
-    //   systemPrompt,
-    // );
-
-    // Use simple Chat Completion, GOAT tools not required for simple chess moves
-    const content = await this.agentChatService.createChatCompletion({
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You must output only JSON. Do not include code fences or extra text. Output must be like {"pick": <number>}.',
-        },
-        { role: 'user', content: prompt },
-      ],
-      maxTokens: 60,
-      temperature: 0.2,
-      timeoutMs: 12_000,
-    });
+    const content = await this.goatService.executeAgentAction(
+      agent.id,
+      prompt,
+      systemPrompt,
+    );
 
     const parsed = this.parseJsonObject<{ pick?: number }>(content);
     const pick = parsed?.pick;
