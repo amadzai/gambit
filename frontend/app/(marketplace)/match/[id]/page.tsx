@@ -18,7 +18,7 @@ const MATCH_PAGE_DEFAULT_POSITION = DEFAULT_POSITION;
 
 /** Fallback avatar/color for the white-side agent. */
 const WHITE_AVATAR = '♔';
-const WHITE_COLOR = '#8B5CF6';
+const WHITE_COLOR = '#a67c5e';
 
 /** Fallback avatar/color for the black-side agent. */
 const BLACK_AVATAR = '♚';
@@ -65,7 +65,7 @@ export default function MatchPage() {
   const openingName = getOpeningName(moves[0]?.white);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-black">
       <MarketplaceNav />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -81,10 +81,10 @@ export default function MatchPage() {
           <div className="space-y-6">
             {/* Black Player Info */}
             <div
-              className={`bg-slate-900/50 border rounded-xl p-4 transition-all ${
+              className={`bg-neutral-900/50 border rounded-xl p-4 transition-all ${
                 showThinking && currentTurn === 'black'
                   ? 'border-green-500 shadow-lg shadow-green-500/20'
-                  : 'border-slate-800'
+                  : 'border-neutral-800'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -112,7 +112,7 @@ export default function MatchPage() {
                     >
                       {blackAgent?.name ?? 'Loading…'}
                     </Link>
-                    <div className="text-sm text-slate-400">
+                    <div className="text-sm text-neutral-400">
                       Rating: {blackAgent?.elo ?? '—'}
                     </div>
                   </div>
@@ -127,10 +127,10 @@ export default function MatchPage() {
             </div>
 
             {/* Chess Board */}
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4">
               <div>
                 {isLoading ? (
-                  <div className="flex items-center justify-center h-[400px] text-slate-400">
+                  <div className="flex items-center justify-center h-[400px] text-neutral-400">
                     Loading game…
                   </div>
                 ) : error ? (
@@ -149,10 +149,10 @@ export default function MatchPage() {
 
             {/* White Player Info */}
             <div
-              className={`bg-slate-900/50 border rounded-xl p-4 transition-all ${
+              className={`bg-neutral-900/50 border rounded-xl p-4 transition-all ${
                 showThinking && currentTurn === 'white'
                   ? 'border-green-500 shadow-lg shadow-green-500/20'
-                  : 'border-slate-800'
+                  : 'border-neutral-800'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -176,11 +176,11 @@ export default function MatchPage() {
                   <div>
                     <Link
                       href={`/agent/${whiteAgent?.id ?? ''}`}
-                      className="font-bold text-white hover:text-violet-400 transition-colors"
+                      className="font-bold text-white hover:text-brand-400 transition-colors"
                     >
                       {whiteAgent?.name ?? 'Loading…'}
                     </Link>
-                    <div className="text-sm text-slate-400">
+                    <div className="text-sm text-neutral-400">
                       Rating: {whiteAgent?.elo ?? '—'}
                     </div>
                   </div>
@@ -206,17 +206,17 @@ export default function MatchPage() {
             />
 
             {/* Match Stats */}
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4">
               <h3 className="font-bold text-white mb-4">Match Stats</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Opening</span>
+                  <span className="text-sm text-neutral-400">Opening</span>
                   <span className="text-sm font-medium text-white">
                     {openingName}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Match Date</span>
+                  <span className="text-sm text-neutral-400">Match Date</span>
                   {isLive ? (
                     <span className="text-sm font-medium text-red-400 flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -231,13 +231,13 @@ export default function MatchPage() {
                   )}
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Match Outcome</span>
+                  <span className="text-sm text-neutral-400">Match Outcome</span>
                   <span className="text-sm font-medium text-white">
                     {matchOutcome}
                   </span>
                 </div>
-                <div className="flex justify-between items-center pt-3 border-t border-slate-800">
-                  <span className="text-sm text-slate-400">Viewers</span>
+                <div className="flex justify-between items-center pt-3 border-t border-neutral-800">
+                  <span className="text-sm text-neutral-400">Viewers</span>
                   <span className="text-sm font-medium text-white flex items-center gap-1">
                     <Users className="w-4 h-4" />
                     121
@@ -247,15 +247,15 @@ export default function MatchPage() {
             </div>
 
             {/* Trading Panel */}
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4">
               <h3 className="font-bold text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-violet-400" />
+                <TrendingUp className="w-5 h-5 text-brand-400" />
                 Live Trading
               </h3>
               <div className="space-y-3">
-                <div className="bg-slate-800/50 rounded-lg p-3">
+                <div className="bg-neutral-800/50 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-slate-400">
+                    <span className="text-sm text-neutral-400">
                       {whiteAgent?.name ?? 'White'}
                     </span>
                     <span className="text-sm font-bold text-green-400">
@@ -264,9 +264,9 @@ export default function MatchPage() {
                   </div>
                   <div className="text-lg font-bold text-white">$2.48</div>
                 </div>
-                <div className="bg-slate-800/50 rounded-lg p-3">
+                <div className="bg-neutral-800/50 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-slate-400">
+                    <span className="text-sm text-neutral-400">
                       {blackAgent?.name ?? 'Black'}
                     </span>
                     <span className="text-sm font-bold text-red-400">
@@ -276,7 +276,7 @@ export default function MatchPage() {
                   <div className="text-lg font-bold text-white">$1.21</div>
                 </div>
               </div>
-              <button className="w-full mt-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white py-2.5 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all">
+              <button className="w-full mt-4 bg-gradient-to-r from-brand-600 to-brand-500 text-white py-2.5 rounded-lg font-medium hover:from-brand-700 hover:to-brand-600 transition-all">
                 Trade Now
               </button>
             </div>

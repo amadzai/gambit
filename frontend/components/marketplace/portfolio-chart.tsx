@@ -24,7 +24,7 @@ export interface PortfolioChartProps {
  */
 export function PortfolioChart({ data }: PortfolioChartProps) {
   return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
       <h3 className="text-xl font-bold text-white mb-6">
         Portfolio Performance
       </h3>
@@ -32,24 +32,24 @@ export function PortfolioChart({ data }: PortfolioChartProps) {
         <AreaChart data={data}>
           <defs>
             <linearGradient id="colorPortfolio" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+              <stop offset="5%" stopColor="#a67c5e" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#a67c5e" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-          <XAxis dataKey="date" stroke="#94a3b8" tickMargin={10} />
-          <YAxis stroke="#94a3b8" tickMargin={10} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
+          <XAxis dataKey="date" stroke="#a3a3a3" tickMargin={10} />
+          <YAxis stroke="#a3a3a3" tickMargin={10} />
           <Tooltip
             contentStyle={{
-              backgroundColor: "#1e293b",
-              border: "1px solid #334155",
+              backgroundColor: "#171717",
+              border: "1px solid #333333",
               borderRadius: "8px",
             }}
           />
           <Area
             type="monotone"
             dataKey="value"
-            stroke="#8B5CF6"
+            stroke="#a67c5e"
             strokeWidth={2}
             fillOpacity={1}
             fill="url(#colorPortfolio)"

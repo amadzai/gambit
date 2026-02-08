@@ -48,7 +48,7 @@ export function LiveChessBoard({
   const squareStyles: Record<string, React.CSSProperties> = {};
   if (highlightSquares) {
     const highlightStyle: React.CSSProperties = {
-      backgroundColor: "#4a3426",
+      backgroundColor: "#c49a7c",
     };
     squareStyles[highlightSquares.from] = highlightStyle;
     squareStyles[highlightSquares.to] = highlightStyle;
@@ -59,10 +59,10 @@ export function LiveChessBoard({
     allowDragging,
     boardOrientation: "white" as const,
     lightSquareStyle: {
-      backgroundColor: "hsl(237, 16.24%, 22.94%)",
+      backgroundColor: "#a67c5e",
     },
     darkSquareStyle: {
-      backgroundColor: "hsl(240, 21%, 12%)",
+      backgroundColor: "#4a3426",
     },
     squareStyles,
     onPieceDrop: ({

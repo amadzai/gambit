@@ -34,17 +34,17 @@ export function MoveHistoryPanel({
   const activeHalfMove = currentMoveIndex ?? 0;
 
   return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-white">Move History</h3>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-400">
+          <span className="text-sm text-neutral-400">
             Move {moves.length > 0 ? moves[moves.length - 1].moveNumber : 0}
           </span>
           <button
             type="button"
             onClick={onGoBack}
-            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-1 rounded hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors"
             aria-label="Previous move"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -52,7 +52,7 @@ export function MoveHistoryPanel({
           <button
             type="button"
             onClick={onGoForward}
-            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-1 rounded hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors"
             aria-label="Next move"
           >
             <ChevronRight className="w-4 h-4" />
@@ -76,11 +76,11 @@ export function MoveHistoryPanel({
               key={move.moveNumber}
               className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
                 isRowActive
-                  ? 'bg-violet-500/20 border border-violet-500/30'
-                  : 'hover:bg-slate-800/50'
+                  ? 'bg-brand-500/20 border border-brand-500/30'
+                  : 'hover:bg-neutral-800/50'
               }`}
             >
-              <div className="w-8 text-center text-sm font-bold text-slate-500">
+              <div className="w-8 text-center text-sm font-bold text-neutral-500">
                 {move.moveNumber}.
               </div>
               <div className="flex-1 flex gap-2">
@@ -89,8 +89,8 @@ export function MoveHistoryPanel({
                   onClick={() => onMoveClick?.(whiteHalfIdx)}
                   className={`flex-1 rounded px-3 py-2 text-left transition-colors ${
                     isWhiteActive
-                      ? 'bg-violet-500/30 ring-1 ring-violet-500/50'
-                      : 'bg-slate-800/50 hover:bg-slate-700/50'
+                      ? 'bg-brand-500/30 ring-1 ring-brand-500/50'
+                      : 'bg-neutral-800/50 hover:bg-neutral-700/50'
                   }`}
                 >
                   <div className="font-mono font-medium text-white">
@@ -103,8 +103,8 @@ export function MoveHistoryPanel({
                     onClick={() => onMoveClick?.(blackHalfIdx)}
                     className={`flex-1 rounded px-3 py-2 text-left transition-colors ${
                       isBlackActive
-                        ? 'bg-violet-500/30 ring-1 ring-violet-500/50'
-                        : 'bg-slate-800/50 hover:bg-slate-700/50'
+                        ? 'bg-brand-500/30 ring-1 ring-brand-500/50'
+                        : 'bg-neutral-800/50 hover:bg-neutral-700/50'
                     }`}
                   >
                     <div className="font-mono font-medium text-white">

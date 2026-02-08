@@ -22,9 +22,9 @@ export default function MyDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <div className="min-h-screen bg-black">
         <MarketplaceNav />
-        <div className="flex items-center justify-center h-[60vh] text-slate-400">
+        <div className="flex items-center justify-center h-[60vh] text-neutral-400">
           Loading dashboard...
         </div>
       </div>
@@ -33,7 +33,7 @@ export default function MyDashboardPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <div className="min-h-screen bg-black">
         <MarketplaceNav />
         <div className="flex items-center justify-center h-[60vh] text-red-400">
           {error.message}
@@ -43,16 +43,16 @@ export default function MyDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-black">
       <MarketplaceNav />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Portfolio Overview */}
         <div className="mb-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
-                <Wallet className="w-5 h-5 text-slate-400" />
+                <Wallet className="w-5 h-5 text-neutral-400" />
                 <span
                   className={`text-sm ${
                     totalChangePercent >= 0 ? "text-green-400" : "text-red-400"
@@ -65,14 +65,14 @@ export default function MyDashboardPage() {
               <div className="text-3xl font-bold text-white mb-1">
                 ${totalValue.toFixed(2)}
               </div>
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-neutral-400">
                 Total Portfolio Value
               </div>
             </div>
 
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
-                <BarChart3 className="w-5 h-5 text-slate-400" />
+                <BarChart3 className="w-5 h-5 text-neutral-400" />
                 <span
                   className={`text-sm ${
                     totalPnL >= 0 ? "text-green-400" : "text-red-400"
@@ -88,27 +88,27 @@ export default function MyDashboardPage() {
               >
                 ${totalPnL.toFixed(2)}
               </div>
-              <div className="text-sm text-slate-400">Total P&L</div>
+              <div className="text-sm text-neutral-400">Total P&L</div>
             </div>
 
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
-                <Users className="w-5 h-5 text-slate-400" />
+                <Users className="w-5 h-5 text-neutral-400" />
               </div>
               <div className="text-3xl font-bold text-white mb-1">
                 {positions.length}
               </div>
-              <div className="text-sm text-slate-400">Active Positions</div>
+              <div className="text-sm text-neutral-400">Active Positions</div>
             </div>
 
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
-                <Settings className="w-5 h-5 text-slate-400" />
+                <Settings className="w-5 h-5 text-neutral-400" />
               </div>
               <div className="text-3xl font-bold text-white mb-1">
                 {myAgents.length}
               </div>
-              <div className="text-sm text-slate-400">Created Agents</div>
+              <div className="text-sm text-neutral-400">Created Agents</div>
             </div>
           </div>
 
@@ -124,8 +124,8 @@ export default function MyDashboardPage() {
             onClick={() => setActiveTab("portfolio")}
             className={`px-6 py-3 rounded-lg font-medium transition-colors ${
               activeTab === "portfolio"
-                ? "bg-violet-600 text-white"
-                : "bg-slate-800/50 text-slate-400 hover:bg-slate-800"
+                ? "bg-brand-600 text-white"
+                : "bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800"
             }`}
           >
             Token Positions
@@ -134,8 +134,8 @@ export default function MyDashboardPage() {
             onClick={() => setActiveTab("agents")}
             className={`px-6 py-3 rounded-lg font-medium transition-colors ${
               activeTab === "agents"
-                ? "bg-violet-600 text-white"
-                : "bg-slate-800/50 text-slate-400 hover:bg-slate-800"
+                ? "bg-brand-600 text-white"
+                : "bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800"
             }`}
           >
             My Agents

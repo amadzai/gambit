@@ -5,9 +5,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
-import { toast } from 'sonner';
+import { styledToast } from '@/components/ui/sonner';
 import { useConnection, useReadContract, useWriteContract } from 'wagmi';
-import { Plus, Droplets, LogOut, Loader2 } from 'lucide-react';
+import { Plus, Droplets, LogOut, Loader2, Menu, X } from 'lucide-react';
 import { CreateAgentDialog } from '@/components/marketplace/create-agent-dialog';
 import {
   DropdownMenu,
@@ -43,6 +43,7 @@ export function MarketplaceNav() {
   const { login, logout, authenticated, user } = usePrivy();
   const { address } = useWallet();
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isConnected } = useConnection();
   const chainId = useChainId();
   const { mutateAsync: switchChainAsync } = useSwitchChain();
@@ -86,10 +87,14 @@ export function MarketplaceNav() {
         chainId: baseSepolia.id,
       });
       await refetchUsdc();
-      toast.success('USDC received.');
+      styledToast.success({
+        title: 'USDC Received',
+        description: 'Successfully received USDC from faucet.',
+      });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Faucet request failed.';
-      toast.error(message);
+      const message =
+        err instanceof Error ? err.message : 'Faucet request failed.';
+      styledToast.error({ title: 'Faucet Failed', description: message });
     }
   };
 
@@ -100,47 +105,55 @@ export function MarketplaceNav() {
 
   return (
     <>
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center">
+      <header className="border-b border-neutral-800 bg-neutral-900/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-5">
+          <div className="relative flex items-center justify-between">
+            {/* Left – Create Agent (desktop only) */}
+            <button
+              type="button"
+              onClick={() => setCreateModalOpen(true)}
+              className="hidden md:inline-flex items-center gap-2 bg-gradient-to-r from-brand-600 to-brand-500 text-white px-6 py-2 rounded-lg font-medium hover:from-brand-700 hover:to-brand-600 transition-all shadow-lg shadow-brand-500/25"
+            >
+              <Plus className="w-4 h-4" />
+              Create Agent
+            </button>
+
+            {/* Center – Logo (always visible) */}
+            <Link
+              href="/"
+              className="md:absolute md:left-1/2 md:-translate-x-1/2 flex items-center"
+            >
               <Image
                 src="/gambitWhite.png"
                 alt="gambAIt"
                 width={140}
                 height={50}
-                className="h-12 w-auto"
+                className="h-10 md:h-13 w-auto"
                 priority
               />
             </Link>
-            <div className="flex items-center gap-4">
+
+            {/* Right – Desktop nav */}
+            <div className="hidden md:flex items-center gap-4">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={
                     pathname === link.href
-                      ? 'text-violet-400 font-medium'
-                      : 'text-slate-300 hover:text-white transition-colors'
+                      ? 'text-brand-400 font-medium'
+                      : 'text-neutral-300 hover:text-white transition-colors'
                   }
                 >
                   {link.label}
                 </Link>
               ))}
-              <button
-                type="button"
-                onClick={() => setCreateModalOpen(true)}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2.5 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25"
-              >
-                <Plus className="w-4 h-4" />
-                Create Agent
-              </button>
               {authenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="outline"
-                      className="bg-slate-800 border-slate-700 text-white px-6 py-2.5 rounded-lg text-sm hover:bg-slate-700 hover:text-white"
+                      className="bg-neutral-800 border-neutral-700 text-white px-6 py-2.5 rounded-lg text-sm hover:bg-neutral-700 hover:text-white"
                     >
                       {user?.wallet?.address
                         ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}`
@@ -149,11 +162,11 @@ export function MarketplaceNav() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="w-52 bg-slate-900 border-slate-700"
+                    className="w-52 bg-neutral-900 border-neutral-700"
                   >
                     {usdcAddress && (
                       <>
-                        <div className="px-2 py-2 text-xs text-slate-400 border-b border-slate-700">
+                        <div className="px-2 py-2 text-xs text-neutral-400 border-b border-neutral-700">
                           {formatUsdc(usdcBalance as bigint | undefined)} USDC
                         </div>
                         <DropdownMenuItem
@@ -185,13 +198,110 @@ export function MarketplaceNav() {
               ) : (
                 <button
                   onClick={login}
-                  className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all"
+                  className="bg-gradient-to-r from-brand-600 to-brand-500 text-white px-6 py-2 rounded-lg font-medium hover:from-brand-700 hover:to-brand-600 transition-all"
                 >
                   Connect Wallet
                 </button>
               )}
             </div>
+
+            {/* Right – Mobile hamburger */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              className="md:hidden p-2 text-neutral-300 hover:text-white transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
           </div>
+
+          {/* Mobile menu panel */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-2 border-t border-neutral-800 pt-4 flex flex-col gap-3">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block py-2 px-3 rounded-lg transition-colors ${
+                    pathname === link.href
+                      ? 'text-brand-400 font-medium bg-brand-500/10'
+                      : 'text-neutral-300 hover:text-white hover:bg-neutral-800/50'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCreateModalOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-brand-500 text-white px-6 py-2.5 rounded-lg font-medium hover:from-brand-700 hover:to-brand-600 transition-all shadow-lg shadow-brand-500/25"
+              >
+                <Plus className="w-4 h-4" />
+                Create Agent
+              </button>
+
+              {authenticated ? (
+                <div className="flex flex-col gap-2 bg-neutral-800/50 rounded-lg p-3">
+                  <div className="text-sm text-neutral-300 truncate">
+                    {user?.wallet?.address
+                      ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}`
+                      : 'Connected'}
+                  </div>
+                  {usdcAddress && (
+                    <>
+                      <div className="text-xs text-neutral-400">
+                        {formatUsdc(usdcBalance as bigint | undefined)} USDC
+                      </div>
+                      <button
+                        onClick={() => {
+                          handleFaucet();
+                        }}
+                        disabled={isFaucetPending}
+                        className="inline-flex items-center justify-center gap-2 text-sm text-neutral-300 hover:text-white bg-neutral-700 hover:bg-neutral-600 rounded-lg px-4 py-2 transition-colors disabled:opacity-50"
+                      >
+                        {isFaucetPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Droplets className="h-4 w-4" />
+                        )}
+                        {isFaucetPending ? 'Minting…' : 'Faucet'}
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="inline-flex items-center justify-center gap-2 text-sm text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg px-4 py-2 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Disconnect
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    login();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="bg-gradient-to-r from-brand-600 to-brand-500 text-white px-6 py-2.5 rounded-lg font-medium hover:from-brand-700 hover:to-brand-600 transition-all text-center"
+                >
+                  Connect Wallet
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </header>
 

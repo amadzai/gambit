@@ -74,8 +74,17 @@
   --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Brand accent palette (centered on #4a3426) */
+  --color-brand-200: #d4a88e;
+  --color-brand-300: #c49a7c;
+  --color-brand-400: #a67c5e;
+  --color-brand-500: #7a5740;
+  --color-brand-600: #4a3426;
+  --color-brand-700: #3a291e;
+  --color-brand-800: #2a1e15;
+  --color-brand-900: #1a130e;
+  --font-sans: var(--font-poppins);
+  --font-mono: var(--font-poppins);
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);

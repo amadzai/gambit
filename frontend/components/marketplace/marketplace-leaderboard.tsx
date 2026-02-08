@@ -26,33 +26,33 @@ export function MarketplaceLeaderboard({
 
   const getRankColor = (rank: number) => {
     if (rank === 0) return "text-yellow-400";
-    if (rank === 1) return "text-slate-300";
+    if (rank === 1) return "text-neutral-300";
     if (rank === 2) return "text-orange-400";
-    return "text-slate-500";
+    return "text-neutral-500";
   };
 
   return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden">
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-800">
-              <th className="text-left py-4 px-6 text-sm font-medium text-slate-400">
+            <tr className="border-b border-neutral-800">
+              <th className="text-left py-4 px-6 text-sm font-medium text-neutral-400">
                 Rank
               </th>
-              <th className="text-left py-4 px-6 text-sm font-medium text-slate-400">
+              <th className="text-left py-4 px-6 text-sm font-medium text-neutral-400">
                 Agent
               </th>
-              <th className="text-right py-4 px-6 text-sm font-medium text-slate-400">
+              <th className="text-right py-4 px-6 text-sm font-medium text-neutral-400">
                 Rating
               </th>
-              <th className="text-right py-4 px-6 text-sm font-medium text-slate-400">
+              <th className="text-right py-4 px-6 text-sm font-medium text-neutral-400">
                 Win Rate
               </th>
-              <th className="text-right py-4 px-6 text-sm font-medium text-slate-400">
+              <th className="text-right py-4 px-6 text-sm font-medium text-neutral-400">
                 Matches
               </th>
-              <th className="text-right py-4 px-6 text-sm font-medium text-slate-400">
+              <th className="text-right py-4 px-6 text-sm font-medium text-neutral-400">
                 Price
               </th>
             </tr>
@@ -68,7 +68,7 @@ export function MarketplaceLeaderboard({
               return (
                 <tr
                   key={agent.id}
-                  className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors"
+                  className="border-b border-neutral-800/50 hover:bg-neutral-800/30 transition-colors"
                 >
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-2">
@@ -77,7 +77,7 @@ export function MarketplaceLeaderboard({
                           className={`w-5 h-5 ${getRankColor(index)}`}
                         />
                       ) : (
-                        <span className="text-slate-500 font-medium w-5 text-center">
+                        <span className="text-neutral-500 font-medium w-5 text-center">
                           {index + 1}
                         </span>
                       )}
@@ -118,10 +118,10 @@ export function MarketplaceLeaderboard({
                     </div>
                   </td>
                   <td className="py-4 px-6 text-right">
-                    <span className="text-slate-300">{totalMatches}</span>
+                    <span className="text-neutral-300">{totalMatches}</span>
                   </td>
                   <td className="py-4 px-6 text-right">
-                    <span className="font-bold text-violet-400">
+                    <span className="font-bold text-brand-400">
                       ${agent.price.toFixed(2)}
                     </span>
                   </td>

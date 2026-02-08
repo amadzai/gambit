@@ -18,14 +18,14 @@ export function EvaluationBar({ evaluation }: EvaluationBarProps) {
     <div className="border border-white rounded-md p-2">
       <div className="relative h-[830px] rounded-md overflow-hidden">
         <div
-          className="absolute top-0 left-0 right-0 bg-slate-950 transition-all duration-500"
+          className="absolute top-0 left-0 right-0 bg-neutral-950 transition-all duration-500"
           style={{ height: `${100 - whiteAdvantage}%` }}
         />
         <div
-          className="absolute bottom-0 left-0 right-0 bg-slate-100 transition-all duration-500"
+          className="absolute bottom-0 left-0 right-0 bg-neutral-100 transition-all duration-500"
           style={{ height: `${whiteAdvantage}%` }}
         />
-        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-600 -translate-y-1/2" />
+        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-neutral-600 -translate-y-1/2" />
         <div
           className="absolute left-1/2 transition-all duration-500"
           style={{
@@ -33,7 +33,7 @@ export function EvaluationBar({ evaluation }: EvaluationBarProps) {
             transform: 'translate(-50%, -50%)',
           }}
         >
-          <div className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-xs font-bold text-white whitespace-nowrap">
+          <div className="bg-neutral-700 border border-neutral-600 rounded px-2 py-1 text-xs font-bold text-white whitespace-nowrap">
             {evaluation > 0 ? '+' : ''}
             {evaluation.toFixed(1)}
           </div>
