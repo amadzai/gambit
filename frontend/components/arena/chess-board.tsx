@@ -48,7 +48,7 @@ export function LiveChessBoard({
   const squareStyles: Record<string, React.CSSProperties> = {};
   if (highlightSquares) {
     const highlightStyle: React.CSSProperties = {
-      backgroundColor: "#c49a7c",
+      backgroundColor: "#e8c84a",
     };
     squareStyles[highlightSquares.from] = highlightStyle;
     squareStyles[highlightSquares.to] = highlightStyle;
