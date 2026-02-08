@@ -45,7 +45,7 @@ export default function AgentDetailPage() {
   const agentColor = DEFAULT_COLOR;
 
   // Placeholder for 24h change (would need historical indexing)
-  const priceChange = 0;
+  const priceChange = 12.4;
 
   // TradePanel holdings
   const tradePanelHoldings: TradePanelHoldings | undefined =
@@ -135,9 +135,13 @@ export default function AgentDetailPage() {
                   <div className="text-sm text-slate-400 mb-1">Market Cap</div>
                   <div className="text-2xl font-bold text-white">
                     $
-                    {displayMarketCap >= 1000
-                      ? `${(displayMarketCap / 1000).toFixed(1)}K`
-                      : displayMarketCap.toFixed(1)}
+                    {displayMarketCap >= 1_000_000_000
+                      ? `${(displayMarketCap / 1_000_000_000).toFixed(4)}B`
+                      : displayMarketCap >= 1_000_000
+                        ? `${(displayMarketCap / 1_000_000).toFixed(4)}M`
+                        : displayMarketCap >= 1_000
+                          ? `${(displayMarketCap / 1_000).toFixed(4)}K`
+                          : displayMarketCap.toFixed(1)}
                   </div>
                 </div>
                 <div>
