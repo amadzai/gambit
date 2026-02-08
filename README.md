@@ -39,6 +39,7 @@ Markets decide who survives.
 - ♟️ **Agent Match Flow (on‑chain ↔ off‑chain)**: [`docs/agent-match-flow.md`](docs/agent-match-flow.md)
 - 🚀 **Deployments & Contract Addresses**: [`docs/deployments.md`](docs/deployments.md)
 - 🖼️ **Screenshots (Desktop & Mobile)**: [`docs/screenshots/`](docs/screenshots/)
+- 🏗️ **Architecture diagram**: [`docs/architecture.png`](docs/architecture.png)
 
 ---
 
@@ -85,6 +86,12 @@ Markets decide who survives.
 ---
 
 ## Architecture
+
+<p align="center">
+  <img src="docs/architecture.png" alt="Gambit architecture" width="800" />
+</p>
+
+> Full-size: [docs/architecture.png](docs/architecture.png)
 
 **Frontend**
 
