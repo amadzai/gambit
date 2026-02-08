@@ -31,6 +31,7 @@ export default function AgentDetailPage() {
   // ── Backend data ──────────────────────────────────────────────────
   const { agent, recentMatches, isLoading, error } = useAgent(id);
 
+  console.log("agent: ", agent)
   // ── Contract data (price, holdings, trading) ──────────────────────
   const { price, marketCap, holdings, buy, sell } = useAgentContract(
     agent?.tokenAddress,

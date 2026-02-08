@@ -12,6 +12,10 @@ export const UNISWAP_V4 = {
   PERMIT2: '0x000000000022D473030F116dDEE9F6B43aC78BA3' as const,
 } as const;
 
+/** AgentFactory creates hookless pools; use this so pool key matches on-chain. */
+export const HOOKLESS_HOOKS =
+  '0x0000000000000000000000000000000000000000' as `0x${string}`;
+
 // ── GambAIt contract addresses (from env) ──────────────────────────
 export function getContractAddresses() {
   return {

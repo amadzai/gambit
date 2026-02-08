@@ -1,9 +1,15 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import type { MessageEvent } from '@nestjs/common';
 import { Subject, Observable } from 'rxjs';
 import { Color, GameStatus, Winner } from '../../../../generated/prisma/client.js';
 import { ChessRulesService } from '../../chess-service/providers/chess-rules.service.js';
 import { AgentService } from '../../agent-service/providers/agent-chess.service.js';
+import { GoatService } from '../../goat/goat.service.js';
 import { SettlementSignerService } from '../../goat/wallet/settlement-signer.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { matchEngineAbi } from '../../goat/plugins/gambit/abis/match-engine.abi.js';
@@ -11,11 +17,15 @@ import { getContractAddresses, baseSepolia } from '../../goat/constants/contract
 import {
   createPublicClient,
   createWalletClient,
+  decodeEventLog,
   http,
+  parseUnits,
   type Hex,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import type {
+  AcceptChallengeRequest,
+  ChallengeRequest,
   MatchStartRequest,
   MatchMoveEvent,
 } from '../interfaces/match.interface.js';
@@ -36,6 +46,7 @@ export class MatchService {
   constructor(
     private readonly agentService: AgentService,
     private readonly chessRulesService: ChessRulesService,
+    private readonly goatService: GoatService,
     private readonly settlementSigner: SettlementSignerService,
     private readonly prisma: PrismaService,
   ) {}
@@ -68,6 +79,266 @@ export class MatchService {
     });
 
     return { gameId: game.id };
+  }
+
+  /**
+   * Full challenge flow: on-chain challenge → auto-accept → start chess match.
+   */
+  async challenge(
+    req: ChallengeRequest,
+  ): Promise<{ matchId: string; onChainMatchId: string; gameId: string }> {
+    const { challengerAgentId, opponentAgentId, stakeAmount } = req;
+    const contracts = getContractAddresses();
+    const matchEngineAddress = contracts.MATCH_ENGINE;
+
+    // 1. Validate both agents
+    const [challenger, opponent] = await Promise.all([
+      this.prisma.agent.findUnique({
+        where: { id: challengerAgentId },
+        select: {
+          id: true,
+          walletAddress: true,
+          encryptedPrivateKey: true,
+          tokenAddress: true,
+        },
+      }),
+      this.prisma.agent.findUnique({
+        where: { id: opponentAgentId },
+        select: {
+          id: true,
+          walletAddress: true,
+          encryptedPrivateKey: true,
+          tokenAddress: true,
+        },
+      }),
+    ]);
+
+    if (!challenger)
+      throw new NotFoundException(`Challenger agent ${challengerAgentId} not found`);
+    if (!opponent)
+      throw new NotFoundException(`Opponent agent ${opponentAgentId} not found`);
+    if (!challenger.walletAddress || !challenger.encryptedPrivateKey || !challenger.tokenAddress)
+      throw new BadRequestException(
+        `Challenger agent ${challengerAgentId} missing walletAddress, encryptedPrivateKey, or tokenAddress`,
+      );
+    if (!opponent.walletAddress || !opponent.encryptedPrivateKey || !opponent.tokenAddress)
+      throw new BadRequestException(
+        `Opponent agent ${opponentAgentId} missing walletAddress, encryptedPrivateKey, or tokenAddress`,
+      );
+
+    const stakeAmountBaseUnits = parseUnits(stakeAmount, 6).toString();
+
+    // 2. Agent A (challenger) — approve USDC + challenge via GOAT
+    this.logger.log(
+      `Challenge flow: Agent ${challengerAgentId} challenging agent ${opponentAgentId} for ${stakeAmount} USDC`,
+    );
+
+    const challengeResult = await this.goatService.executeAgentAction(
+      challengerAgentId,
+      `You need to challenge another agent to a chess match.
+First, approve ${stakeAmount} USDC for the MatchEngine contract at ${matchEngineAddress}.
+Then, call challenge with your agent token ${challenger.tokenAddress}, opponent token ${opponent.tokenAddress}, and stake amount ${stakeAmountBaseUnits}.
+Do this now.`,
+    );
+
+    this.logger.log(`Challenge GOAT result: ${challengeResult}`);
+
+    // 3. Extract on-chain matchId from challenge tx receipt
+    const txHash = this.extractTxHash(challengeResult);
+    if (!txHash) {
+      throw new BadRequestException(
+        `Could not extract transaction hash from challenge result: ${challengeResult}`,
+      );
+    }
+
+    const publicClient = createPublicClient({
+      chain: baseSepolia,
+      transport: http(process.env.RPC_URL ?? 'https://sepolia.base.org'),
+    });
+
+    const receipt = await publicClient.getTransactionReceipt({
+      hash: txHash as Hex,
+    });
+
+    let onChainMatchId: string | undefined;
+    for (const log of receipt.logs) {
+      try {
+        const decoded = decodeEventLog({
+          abi: matchEngineAbi,
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decoded.eventName === 'ChallengeCreated') {
+          onChainMatchId = (decoded.args as { matchId: string }).matchId;
+          break;
+        }
+      } catch {
+        // Not a ChallengeCreated event, skip
+      }
+    }
+
+    if (!onChainMatchId) {
+      throw new BadRequestException(
+        'ChallengeCreated event not found in the transaction receipt',
+      );
+    }
+
+    this.logger.log(`On-chain matchId extracted: ${onChainMatchId}`);
+
+    // 4. Create Match record in DB (status: PENDING)
+    const matchRecord = await this.prisma.match.create({
+      data: {
+        onChainMatchId,
+        agent1TokenAddress: challenger.tokenAddress,
+        agent2TokenAddress: opponent.tokenAddress,
+        stakeAmount,
+        status: 'PENDING',
+      },
+    });
+
+    // 5. Agent B (opponent) — approve USDC + accept challenge via GOAT
+    this.logger.log(
+      `Challenge flow: Agent ${opponentAgentId} accepting challenge ${onChainMatchId}`,
+    );
+
+    await this.goatService.executeAgentAction(
+      opponentAgentId,
+      `You have been challenged to a chess match.
+First, approve ${stakeAmount} USDC for the MatchEngine contract at ${matchEngineAddress}.
+Then, accept the challenge with matchId ${onChainMatchId}.
+Do this now.`,
+    );
+
+    // 6. Update Match record (status: ACTIVE)
+    await this.prisma.match.update({
+      where: { id: matchRecord.id },
+      data: { status: 'ACTIVE' },
+    });
+
+    this.logger.log(
+      `Challenge accepted — starting chess match for on-chain matchId=${onChainMatchId}`,
+    );
+
+    // 7. Start chess match
+    const { gameId } = await this.startMatch({
+      whiteAgentId: challengerAgentId,
+      blackAgentId: opponentAgentId,
+      multiPv: req.multiPv,
+      movetimeMs: req.movetimeMs,
+      delayMs: req.delayMs,
+      onChainMatchId,
+    });
+
+    // Link chess game to match record
+    await this.prisma.match.update({
+      where: { id: matchRecord.id },
+      data: { chessGameId: gameId },
+    });
+
+    return {
+      matchId: matchRecord.id,
+      onChainMatchId,
+      gameId,
+    };
+  }
+
+  /**
+   * Extract a transaction hash (0x followed by 64 hex chars) from a string.
+   */
+  private extractTxHash(text: string): string | null {
+    const match = text.match(/0x[a-fA-F0-9]{64}/);
+    return match ? match[0] : null;
+  }
+
+  /**
+   * Accept an existing on-chain challenge, then start the chess match.
+   * Expects a PENDING Match record already created (e.g. via challenge() or an external flow).
+   */
+  async acceptChallenge(
+    req: AcceptChallengeRequest,
+  ): Promise<{ matchId: string; onChainMatchId: string; gameId: string }> {
+    const { onChainMatchId, challengerAgentId, opponentAgentId } = req;
+    const contracts = getContractAddresses();
+    const matchEngineAddress = contracts.MATCH_ENGINE;
+
+    // 1. Find the PENDING match record
+    const matchRecord = await this.prisma.match.findUnique({
+      where: { onChainMatchId },
+    });
+
+    if (!matchRecord) {
+      throw new NotFoundException(
+        `No match record found for onChainMatchId=${onChainMatchId}`,
+      );
+    }
+    if (matchRecord.status !== 'PENDING') {
+      throw new BadRequestException(
+        `Match ${onChainMatchId} is not PENDING (current status: ${matchRecord.status})`,
+      );
+    }
+
+    // 2. Validate opponent agent
+    const opponent = await this.prisma.agent.findUnique({
+      where: { id: opponentAgentId },
+      select: {
+        id: true,
+        walletAddress: true,
+        encryptedPrivateKey: true,
+        tokenAddress: true,
+      },
+    });
+
+    if (!opponent)
+      throw new NotFoundException(`Opponent agent ${opponentAgentId} not found`);
+    if (!opponent.walletAddress || !opponent.encryptedPrivateKey || !opponent.tokenAddress)
+      throw new BadRequestException(
+        `Opponent agent ${opponentAgentId} missing walletAddress, encryptedPrivateKey, or tokenAddress`,
+      );
+
+    // 3. Agent B (opponent) — approve USDC + accept challenge via GOAT
+    this.logger.log(
+      `Accept challenge flow: Agent ${opponentAgentId} accepting challenge ${onChainMatchId}`,
+    );
+
+    await this.goatService.executeAgentAction(
+      opponentAgentId,
+      `You have been challenged to a chess match.
+First, approve ${matchRecord.stakeAmount} USDC for the MatchEngine contract at ${matchEngineAddress}.
+Then, accept the challenge with matchId ${onChainMatchId}.
+Do this now.`,
+    );
+
+    // 4. Update Match record (status: ACTIVE)
+    await this.prisma.match.update({
+      where: { id: matchRecord.id },
+      data: { status: 'ACTIVE' },
+    });
+
+    this.logger.log(
+      `Challenge accepted — starting chess match for on-chain matchId=${onChainMatchId}`,
+    );
+
+    // 5. Start chess match
+    const { gameId } = await this.startMatch({
+      whiteAgentId: challengerAgentId,
+      blackAgentId: opponentAgentId,
+      multiPv: req.multiPv,
+      movetimeMs: req.movetimeMs,
+      delayMs: req.delayMs,
+      onChainMatchId,
+    });
+
+    // Link chess game to match record
+    await this.prisma.match.update({
+      where: { id: matchRecord.id },
+      data: { chessGameId: gameId },
+    });
+
+    return {
+      matchId: matchRecord.id,
+      onChainMatchId,
+      gameId,
+    };
   }
 
   /**

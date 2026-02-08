@@ -6,6 +6,10 @@ export const TICK_SPACING = 60;
 export const TOKEN_DECIMALS = 6; // Both USDC and AgentToken are 6dp
 export const AGENT_TOKEN_TOTAL_SUPPLY = 1_000_000_000; // 1 billion tokens
 
+/** AgentFactory creates hookless pools; use this so poolId matches on-chain. */
+export const HOOKLESS_HOOKS =
+  '0x0000000000000000000000000000000000000000' as `0x${string}`;
+
 // ── Sqrt price limits for swap (from TickMath) ──────────────────────
 /** Minimum sqrt price for zeroForOne swaps (MIN_SQRT_PRICE + 1). */
 export const MIN_SQRT_PRICE_LIMIT = BigInt('4295128740') as bigint;
@@ -94,7 +98,7 @@ export function computePoolId(poolKey: PoolKey): `0x${string}` {
  * Since both USDC and AgentToken are 6 decimals, the decimal adjustment
  * factor is 10^0 = 1, so: price = (sqrtPriceX96 / 2^96)^2
  *
- * The returned price represents "how much of currency0 per 1 unit of currency1".
+ * The returned price represents "how many units of currency1 per 1 unit of currency0".
  */
 export function sqrtPriceX96ToPrice(
   sqrtPriceX96: bigint,
@@ -135,14 +139,15 @@ export function getAgentTokenPrice(
 ): number {
   const rawPrice = sqrtPriceX96ToPrice(sqrtPriceX96);
 
-  // rawPrice = price of currency1 in terms of currency0
+  // rawPrice = (sqrtPriceX96 / 2^96)^2 = token1 / token0
+  // i.e. how many units of token1 per 1 unit of token0
   if (usdcAddress.toLowerCase() < tokenAddress.toLowerCase()) {
     // currency0 = USDC, currency1 = AgentToken
-    // rawPrice = USDC per AgentToken → that's what we want
-    return rawPrice;
+    // rawPrice = AgentToken per USDC → invert to get USDC per AgentToken
+    return rawPrice > 0 ? 1 / rawPrice : 0;
   } else {
     // currency0 = AgentToken, currency1 = USDC
-    // rawPrice = AgentToken per USDC → invert
-    return rawPrice > 0 ? 1 / rawPrice : 0;
+    // rawPrice = USDC per AgentToken → that's what we want
+    return rawPrice;
   }
 }

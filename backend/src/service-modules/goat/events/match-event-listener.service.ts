@@ -9,13 +9,15 @@ import {
   webSocket,
   type WatchContractEventReturnType,
   type Log,
-  AbiEvent,
-  Address,
 } from 'viem';
 import { baseSepolia, getContractAddresses } from '../constants/contracts.js';
 import { matchEngineAbi } from '../plugins/gambit/abis/match-engine.abi.js';
 
-type MatchEngineLog = Log<bigint, number, false, AbiEvent, true>;
+type MatchEngineEventAbi = Extract<
+  (typeof matchEngineAbi)[number],
+  { type: 'event' }
+>;
+type MatchEngineLog = Log<bigint, number, false, MatchEngineEventAbi, true>;
 
 /**
  * Listens for MatchEngine on-chain events via WebSocket and logs them.

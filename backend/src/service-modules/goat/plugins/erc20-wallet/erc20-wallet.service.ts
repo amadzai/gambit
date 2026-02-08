@@ -2,18 +2,20 @@ import { Tool } from '@goat-sdk/core';
 import { EVMWalletClient } from '@goat-sdk/wallet-evm';
 import { parseAbi, parseUnits } from 'viem';
 import {
+  ApproveUsdcParams,
   GetMyTokenBalanceParams,
   SendUsdcParams,
   TransferTokenParams,
   EmptyParams,
 } from './parameters.js';
 
-/** Minimal ERC-20 ABI used for balance / transfer calls. */
+/** Minimal ERC-20 ABI used for balance / transfer / approve calls. */
 const erc20Abi = parseAbi([
   'function balanceOf(address account) external view returns (uint256)',
   'function decimals() external view returns (uint8)',
   'function symbol() external view returns (string)',
   'function transfer(address to, uint256 amount) external returns (bool)',
+  'function approve(address spender, uint256 amount) external returns (bool)',
 ]);
 
 /** USDC always uses 6 decimals. */
@@ -139,5 +141,27 @@ export class Erc20WalletService {
     });
 
     return `Sent ${amount} tokens to ${to}. Transaction hash: ${hash}`;
+  }
+
+  @Tool({
+    description:
+      'Approve a spender to spend USDC from the agent wallet. Provide the spender address and amount in human-readable USDC (e.g. "10" for 10 USDC).',
+  })
+  async approveUsdc(
+    walletClient: EVMWalletClient,
+    parameters: ApproveUsdcParams,
+  ): Promise<string> {
+    const amount = String(parameters.amount);
+    const spender = String(parameters.spender);
+    const baseUnits = parseUnits(amount, USDC_DECIMALS);
+
+    const { hash } = await walletClient.sendTransaction({
+      to: this.usdcAddress,
+      abi: erc20Abi,
+      functionName: 'approve',
+      args: [spender, baseUnits],
+    });
+
+    return `Approved ${amount} USDC for ${spender}. Transaction hash: ${hash}`;
   }
 }

@@ -22,7 +22,7 @@ export class MatchEngineService {
 
   @Tool({
     description:
-      'Challenge another AI agent to a chess match with a staked amount of USDC',
+      'Challenge another AI agent to a chess match with a staked amount of USDC. Pass agent wallet addresses (not token addresses).',
   })
   async challenge(
     walletClient: EVMWalletClient,
@@ -33,8 +33,8 @@ export class MatchEngineService {
       abi: matchEngineAbi as unknown as Abi,
       functionName: 'challenge',
       args: [
-        parameters.myAgentToken,
-        parameters.opponentToken,
+        parameters.myAgentWallet,
+        parameters.opponentWallet,
         BigInt(String(parameters.stakeAmount)),
       ],
     });

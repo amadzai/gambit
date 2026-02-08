@@ -30,13 +30,16 @@ contract Deploy is Script {
     // Base Sepolia Uniswap V4 addresses
     // ──────────────────────────────────────────────
     address constant POOL_MANAGER = 0x05E73354cFDd6745C338b50BcFDfA3Aa6fA03408;
-    address constant POSITION_MANAGER = 0x4B2C77d209D3405F41a037Ec6c77F7F5b8e2ca80;
+    address constant POSITION_MANAGER =
+        0x4B2C77d209D3405F41a037Ec6c77F7F5b8e2ca80;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address resultSigner = vm.addr(deployerPrivateKey);
         address treasury = vm.addr(deployerPrivateKey);
         uint256 creationFee = vm.envOr("CREATION_FEE", uint256(1000e6));
+        address oldFactoryAddress =
+            vm.envOr("OLD_FACTORY", address(0));
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -51,6 +54,19 @@ contract Deploy is Script {
             console.log("Deployed MockUSDC:", usdc);
         }
 
+        if (oldFactoryAddress != address(0)) {
+            console.log("Withdrawing from old factory");
+
+            AgentFactory oldFactory = AgentFactory(payable(oldFactoryAddress));
+
+            uint256 oldBalance = address(oldFactory).balance;
+
+            if (oldBalance > 0) {
+                oldFactory.withdrawEth(oldBalance);
+                console.log("Withdrew ETH from old factory:", oldBalance);
+            }
+        }
+
         // ── 2. AgentFactory ──────────────────────
         AgentFactory factory = new AgentFactory(
             usdc,
@@ -59,6 +75,8 @@ contract Deploy is Script {
             creationFee
         );
         console.log("Deployed AgentFactory:", address(factory));
+
+        factory.depositEth{value: 1 ether}();
 
         // ── 3. Fund AgentFactory with ETH for agent wallet gas funding
         factory.depositEth{value: 0.1 ether}();

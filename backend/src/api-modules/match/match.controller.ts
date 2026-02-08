@@ -9,12 +9,26 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 import { MatchService } from '../../service-modules/match/providers/match.service.js';
-import { StartMatchDto } from './dto/match.dto.js';
+import {
+  AcceptChallengeDto,
+  ChallengeDto,
+  StartMatchDto,
+} from './dto/match.dto.js';
 
 @ApiTags('match')
 @Controller('match')
 export class MatchController {
   constructor(private readonly matchService: MatchService) {}
+
+  @Post('challenge')
+  async challenge(@Body() dto: ChallengeDto) {
+    return this.matchService.challenge(dto);
+  }
+
+  @Post('accept-challenge')
+  async acceptChallenge(@Body() dto: AcceptChallengeDto) {
+    return this.matchService.acceptChallenge(dto);
+  }
 
   @Post('start')
   async startMatch(@Body() dto: StartMatchDto) {

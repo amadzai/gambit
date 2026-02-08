@@ -4,7 +4,10 @@ import { generateText, stepCountIs } from 'ai';
 import { getOnChainTools } from '@goat-sdk/adapter-vercel-ai';
 import { EVMWalletClient } from '@goat-sdk/wallet-evm';
 import { uniswapV4 } from '../plugins/uniswap-v4/uniswap-v4.plugin.js';
-import { getContractAddresses } from '../constants/contracts.js';
+import {
+  getContractAddresses,
+  HOOKLESS_HOOKS,
+} from '../constants/contracts.js';
 import { gambit } from '../plugins/gambit/gambit.plugin.js';
 import { erc20Wallet } from '../plugins/erc20-wallet/erc20-wallet.plugin.js';
 
@@ -32,7 +35,7 @@ export class AIAgentService {
           gambitHookAddress: addresses.GAMBIT_HOOK,
         }),
         uniswapV4({
-          hookAddress: addresses.GAMBIT_HOOK,
+          hookAddress: HOOKLESS_HOOKS,
         }),
         erc20Wallet({
           usdcAddress: addresses.USDC,
@@ -66,6 +69,10 @@ export class AIAgentService {
 
     Make strategic decisions based on the context provided. Be concise in your reasoning.`;
 
+    this.logger.log(`=== Agent ${agentAddress} executing decision ===`);
+    this.logger.log(`Prompt: ${context}`);
+    this.logger.log(`Model: ${this.defaultModel}`);
+
     try {
       const result = await generateText({
         model: this.openrouter.chat(this.defaultModel),
@@ -75,10 +82,44 @@ export class AIAgentService {
         prompt: context,
       });
 
+      // Log detailed step-by-step breakdown
+      for (const [i, step] of result.steps.entries()) {
+        this.logger.log(`--- Step ${i + 1}/${result.steps.length} ---`);
+
+        if (step.text) {
+          this.logger.log(`  Agent reasoning: ${step.text}`);
+        }
+
+        if (step.toolCalls?.length) {
+          for (const tc of step.toolCalls) {
+            const toolCall = tc as Record<string, unknown>;
+            this.logger.log(
+              `  Tool call: ${tc.toolName}(${JSON.stringify(toolCall.args ?? toolCall.input ?? '')})`,
+            );
+          }
+        }
+
+        if (step.toolResults?.length) {
+          for (const tr of step.toolResults) {
+            const toolResult = tr as Record<string, unknown>;
+            const raw = toolResult.result ?? toolResult.output ?? '';
+            const resultStr =
+              typeof raw === 'string' ? raw : JSON.stringify(raw);
+            this.logger.log(
+              `  Tool result [${tr.toolName}]: ${resultStr.length > 500 ? resultStr.slice(0, 500) + '...' : resultStr}`,
+            );
+          }
+        }
+      }
+
       this.logger.log(
         `Agent ${agentAddress} decision completed. Steps: ${result.steps.length}, ` +
           `Tool calls: ${result.steps.reduce((sum, s) => sum + (s.toolCalls?.length ?? 0), 0)}`,
       );
+
+      if (result.text) {
+        this.logger.log(`Agent final response: ${result.text}`);
+      }
 
       return result.text || 'Agent completed actions without text response.';
     } catch (error) {
