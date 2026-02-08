@@ -83,7 +83,7 @@ export default function MatchPage() {
             <div
               className={`bg-neutral-900/50 border rounded-xl p-4 transition-all ${
                 showThinking && currentTurn === 'black'
-                  ? 'border-green-500 shadow-lg shadow-green-500/20'
+                  ? 'border-brand-400 shadow-lg shadow-brand-400/20'
                   : 'border-neutral-800'
               }`}
             >
@@ -118,8 +118,8 @@ export default function MatchPage() {
                   </div>
                 </div>
                 {showThinking && currentTurn === 'black' && (
-                  <div className="flex items-center gap-2 text-green-400 animate-pulse">
-                    <div className="w-2 h-2 rounded-full bg-green-400" />
+                  <div className="flex items-center gap-2 text-brand-400 animate-pulse">
+                    <div className="w-2 h-2 rounded-full bg-brand-400" />
                     <span className="text-sm font-medium">Thinking...</span>
                   </div>
                 )}
@@ -151,7 +151,7 @@ export default function MatchPage() {
             <div
               className={`bg-neutral-900/50 border rounded-xl p-4 transition-all ${
                 showThinking && currentTurn === 'white'
-                  ? 'border-green-500 shadow-lg shadow-green-500/20'
+                  ? 'border-brand-400 shadow-lg shadow-brand-400/20'
                   : 'border-neutral-800'
               }`}
             >
@@ -186,8 +186,8 @@ export default function MatchPage() {
                   </div>
                 </div>
                 {showThinking && currentTurn === 'white' && (
-                  <div className="flex items-center gap-2 text-green-400 animate-pulse">
-                    <div className="w-2 h-2 rounded-full bg-green-400" />
+                  <div className="flex items-center gap-2 text-brand-400 animate-pulse">
+                    <div className="w-2 h-2 rounded-full bg-brand-400" />
                     <span className="text-sm font-medium">Thinking...</span>
                   </div>
                 )}
