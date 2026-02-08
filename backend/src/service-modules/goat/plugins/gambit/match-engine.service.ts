@@ -1,19 +1,19 @@
 import { Tool } from '@goat-sdk/core';
 import { EVMWalletClient } from '@goat-sdk/wallet-evm';
-import { battleManagerAbi } from './abis/battle-manager.abi.js';
+import { matchEngineAbi } from './abis/match-engine.abi.js';
 import {
-  ChallengeAgentParams,
+  ChallengeParams,
   AcceptChallengeParams,
   DeclineChallengeParams,
   SettleMatchParams,
-  CancelExpiredMatchParams,
+  CancelMatchParams,
+  CancelExpiredChallengeParams,
   GetMatchParams,
-  GetAgentStatsParams,
   EmptyParams,
 } from './parameters.js';
 import { Abi } from 'viem';
 
-export class BattleManagerService {
+export class MatchEngineService {
   private contractAddress: `0x${string}`;
 
   constructor(contractAddress: `0x${string}`) {
@@ -22,19 +22,19 @@ export class BattleManagerService {
 
   @Tool({
     description:
-      'Challenge another AI agent to a chess battle with a staked amount of tokens',
+      'Challenge another AI agent to a chess match with a staked amount of USDC',
   })
-  async challengeAgent(
+  async challenge(
     walletClient: EVMWalletClient,
-    parameters: ChallengeAgentParams,
+    parameters: ChallengeParams,
   ): Promise<string> {
     const { hash } = await walletClient.sendTransaction({
       to: this.contractAddress,
-      abi: battleManagerAbi as Abi,
-      functionName: 'challengeAgent',
+      abi: matchEngineAbi as unknown as Abi,
+      functionName: 'challenge',
       args: [
-        parameters.agent1Token,
-        parameters.agent2Token,
+        parameters.myAgentToken,
+        parameters.opponentToken,
         BigInt(String(parameters.stakeAmount)),
       ],
     });
@@ -42,7 +42,8 @@ export class BattleManagerService {
   }
 
   @Tool({
-    description: 'Accept a pending chess battle challenge with a stake amount',
+    description:
+      'Accept a pending chess match challenge. The matching stake is automatically taken from your USDC balance.',
   })
   async acceptChallenge(
     walletClient: EVMWalletClient,
@@ -50,15 +51,15 @@ export class BattleManagerService {
   ): Promise<string> {
     const { hash } = await walletClient.sendTransaction({
       to: this.contractAddress,
-      abi: battleManagerAbi as Abi,
+      abi: matchEngineAbi as unknown as Abi,
       functionName: 'acceptChallenge',
-      args: [parameters.matchId, BigInt(String(parameters.stakeAmount))],
+      args: [parameters.matchId],
     });
     return `Challenge accepted. Transaction hash: ${hash}`;
   }
 
   @Tool({
-    description: 'Decline or cancel a pending chess battle challenge',
+    description: 'Decline or withdraw a pending chess match challenge',
   })
   async declineChallenge(
     walletClient: EVMWalletClient,
@@ -66,7 +67,7 @@ export class BattleManagerService {
   ): Promise<string> {
     const { hash } = await walletClient.sendTransaction({
       to: this.contractAddress,
-      abi: battleManagerAbi as Abi,
+      abi: matchEngineAbi as unknown as Abi,
       functionName: 'declineChallenge',
       args: [parameters.matchId],
     });
@@ -75,7 +76,7 @@ export class BattleManagerService {
 
   @Tool({
     description:
-      'Settle a completed chess match with the winner and backend-signed authorization',
+      'Settle a completed chess match with the winner token and backend-signed authorization',
   })
   async settleMatch(
     walletClient: EVMWalletClient,
@@ -83,33 +84,54 @@ export class BattleManagerService {
   ): Promise<string> {
     const { hash } = await walletClient.sendTransaction({
       to: this.contractAddress,
-      abi: battleManagerAbi as Abi,
+      abi: matchEngineAbi as unknown as Abi,
       functionName: 'settleMatch',
-      args: [parameters.matchId, parameters.winner, parameters.signature],
+      args: [
+        parameters.matchId,
+        parameters.winnerToken,
+        parameters.signature,
+      ],
     });
     return `Match settled. Transaction hash: ${hash}`;
   }
 
   @Tool({
     description:
-      'Cancel a match that has expired past the timeout period. Anyone can call this.',
+      'Cancel an active match with backend-signed authorization. Returns stakes to both agents.',
   })
-  async cancelExpiredMatch(
+  async cancelMatch(
     walletClient: EVMWalletClient,
-    parameters: CancelExpiredMatchParams,
+    parameters: CancelMatchParams,
   ): Promise<string> {
     const { hash } = await walletClient.sendTransaction({
       to: this.contractAddress,
-      abi: battleManagerAbi as Abi,
-      functionName: 'cancelExpiredMatch',
-      args: [parameters.matchId],
+      abi: matchEngineAbi as unknown as Abi,
+      functionName: 'cancelMatch',
+      args: [parameters.matchId, parameters.signature],
     });
-    return `Expired match cancelled. Transaction hash: ${hash}`;
+    return `Match cancelled. Transaction hash: ${hash}`;
   }
 
   @Tool({
     description:
-      'Get details of a chess battle match including agents, stakes, status, and timestamps',
+      'Cancel a match that has expired past the 24-hour timeout period. Anyone can call this.',
+  })
+  async cancelExpiredChallenge(
+    walletClient: EVMWalletClient,
+    parameters: CancelExpiredChallengeParams,
+  ): Promise<string> {
+    const { hash } = await walletClient.sendTransaction({
+      to: this.contractAddress,
+      abi: matchEngineAbi as unknown as Abi,
+      functionName: 'cancelExpiredChallenge',
+      args: [parameters.matchId],
+    });
+    return `Expired challenge cancelled. Transaction hash: ${hash}`;
+  }
+
+  @Tool({
+    description:
+      'Get details of a chess match including agents, wallets, stakes, status, and timestamps',
   })
   async getMatch(
     walletClient: EVMWalletClient,
@@ -117,7 +139,7 @@ export class BattleManagerService {
   ): Promise<string> {
     const result = await walletClient.read({
       address: this.contractAddress,
-      abi: battleManagerAbi as Abi,
+      abi: matchEngineAbi as unknown as Abi,
       functionName: 'getMatch',
       args: [parameters.matchId],
     });
@@ -127,7 +149,7 @@ export class BattleManagerService {
   }
 
   @Tool({
-    description: 'Get all match IDs from the BattleManager contract',
+    description: 'Get all match IDs from the MatchEngine contract',
   })
   async getAllMatches(
     walletClient: EVMWalletClient,
@@ -136,29 +158,10 @@ export class BattleManagerService {
     void parameters;
     const result = await walletClient.read({
       address: this.contractAddress,
-      abi: battleManagerAbi as Abi,
+      abi: matchEngineAbi as unknown as Abi,
       functionName: 'getAllMatches',
     });
     const matches = result.value as string[];
     return `All matches (${matches.length}): ${matches.join(', ')}`;
-  }
-
-  @Tool({
-    description:
-      'Get battle statistics for an agent including wins, losses, and total matches',
-  })
-  async getAgentStats(
-    walletClient: EVMWalletClient,
-    parameters: GetAgentStatsParams,
-  ): Promise<string> {
-    const result = await walletClient.read({
-      address: this.contractAddress,
-      abi: battleManagerAbi as Abi,
-      functionName: 'getAgentStats',
-      args: [parameters.agentToken],
-    });
-    const replacer = (_key: string, value: unknown): unknown =>
-      typeof value === 'bigint' ? value.toString() : value;
-    return JSON.stringify(result.value, replacer);
   }
 }

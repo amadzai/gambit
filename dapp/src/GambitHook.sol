@@ -65,7 +65,7 @@ contract GambitHook is IHooks, Ownable {
      */
     constructor(
         address _poolManager,
-        address _agentFactory,
+        address payable _agentFactory,
         address _usdc,
         address _treasury
     ) Ownable(msg.sender) {

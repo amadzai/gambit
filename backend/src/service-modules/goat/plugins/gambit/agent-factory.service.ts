@@ -5,6 +5,7 @@ import {
   CreateAgentParams,
   GetMarketCapParams,
   GetAgentInfoParams,
+  BuyOwnTokenParams,
   EmptyParams,
 } from './parameters.js';
 import { Abi } from 'viem';
@@ -90,5 +91,22 @@ export class AgentFactoryService {
     const replacer = (_key: string, value: unknown): unknown =>
       typeof value === 'bigint' ? value.toString() : value;
     return JSON.stringify(result.value, replacer);
+  }
+
+  @Tool({
+    description:
+      'Buy own agent token using USDC war chest to increase market cap and ELO',
+  })
+  async buyOwnToken(
+    walletClient: EVMWalletClient,
+    parameters: BuyOwnTokenParams,
+  ): Promise<string> {
+    const { hash } = await walletClient.sendTransaction({
+      to: this.contractAddress,
+      abi: agentFactoryAbi as Abi,
+      functionName: 'buyOwnToken',
+      args: [parameters.agentToken, BigInt(String(parameters.usdcAmount))],
+    });
+    return `Token purchased. Transaction hash: ${hash}`;
   }
 }

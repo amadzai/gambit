@@ -35,25 +35,35 @@ export class GetAgentInfoParams extends toolParams(
   }),
 ) {}
 
-// ── BattleManager ──────────────────────────────────────────────────
-export class ChallengeAgentParams extends toolParams(
+export class BuyOwnTokenParams extends toolParams(
   z.object({
-    agent1Token: z.string().describe('Token address of the challenging agent'),
-    agent2Token: z
+    agentToken: z
+      .string()
+      .describe('The agent token address to buy'),
+    usdcAmount: z
+      .string()
+      .describe('Amount of USDC to spend (in base units, 6 decimals)'),
+  }),
+) {}
+
+// ── MatchEngine ───────────────────────────────────────────────────
+export class ChallengeParams extends toolParams(
+  z.object({
+    myAgentToken: z
+      .string()
+      .describe('Token address of the challenging agent'),
+    opponentToken: z
       .string()
       .describe('Token address of the agent being challenged'),
     stakeAmount: z
       .string()
-      .describe('Amount to stake on the match (in base units)'),
+      .describe('Amount of USDC to stake on the match (in base units, 6 decimals)'),
   }),
 ) {}
 
 export class AcceptChallengeParams extends toolParams(
   z.object({
     matchId: z.string().describe('The bytes32 match ID to accept'),
-    stakeAmount: z
-      .string()
-      .describe('Amount to stake on the match (in base units)'),
   }),
 ) {}
 
@@ -66,30 +76,37 @@ export class DeclineChallengeParams extends toolParams(
 export class SettleMatchParams extends toolParams(
   z.object({
     matchId: z.string().describe('The bytes32 match ID to settle'),
-    winner: z.string().describe('The address of the winning agent token'),
-    signature: z.string().describe('Backend-signed authorization for settling'),
+    winnerToken: z
+      .string()
+      .describe(
+        'The address of the winning agent token (address(0) for draw)',
+      ),
+    signature: z
+      .string()
+      .describe('Backend-signed authorization for settling'),
   }),
 ) {}
 
-export class CancelExpiredMatchParams extends toolParams(
+export class CancelMatchParams extends toolParams(
+  z.object({
+    matchId: z.string().describe('The bytes32 match ID to cancel'),
+    signature: z
+      .string()
+      .describe('Backend-signed authorization for cancelling'),
+  }),
+) {}
+
+export class CancelExpiredChallengeParams extends toolParams(
   z.object({
     matchId: z
       .string()
-      .describe('The bytes32 match ID of the expired match to cancel'),
+      .describe('The bytes32 match ID of the expired challenge to cancel'),
   }),
 ) {}
 
 export class GetMatchParams extends toolParams(
   z.object({
     matchId: z.string().describe('The bytes32 match ID to look up'),
-  }),
-) {}
-
-export class GetAgentStatsParams extends toolParams(
-  z.object({
-    agentToken: z
-      .string()
-      .describe('The agent token address to get battle stats for'),
   }),
 ) {}
 

@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Script.sol";
 import "../src/MockUSDC.sol";
 import "../src/AgentFactory.sol";
-import "../src/BattleManager.sol";
+import "../src/MatchEngine.sol";
 import "../src/GambitHook.sol";
 
 /**
@@ -20,8 +20,6 @@ import "../src/GambitHook.sol";
  *
  * Required environment variables:
  *   PRIVATE_KEY       - Deployer private key
- *   RESULT_SIGNER     - Backend wallet address for signing match results
- *   TREASURY          - Protocol treasury address
  *
  * Optional environment variables:
  *   USDC_ADDRESS      - Existing USDC address (if not set, deploys MockUSDC)
@@ -62,30 +60,33 @@ contract Deploy is Script {
         );
         console.log("Deployed AgentFactory:", address(factory));
 
-        // ── 3. GambitHook ────────────────────────
+        // ── 3. Fund AgentFactory with ETH for agent wallet gas funding
+        factory.depositEth{value: 0.1 ether}();
+        console.log("Funded AgentFactory with 0.1 ETH");
+
+        // ── 4. GambitHook ────────────────────────
         GambitHook hook = new GambitHook(
             POOL_MANAGER,
-            address(factory),
+            payable(address(factory)),
             usdc,
             treasury
         );
         console.log("Deployed GambitHook:", address(hook));
 
-        // ── 4. BattleManager ─────────────────────
-        BattleManager battleManager = new BattleManager(
-            address(factory),
-            POOL_MANAGER,
-            POSITION_MANAGER,
+        // ── 5. MatchEngine ───────────────────────
+        MatchEngine matchEngine = new MatchEngine(
+            payable(address(factory)),
+            usdc,
             resultSigner
         );
-        console.log("Deployed BattleManager:", address(battleManager));
+        console.log("Deployed MatchEngine:", address(matchEngine));
 
-        // ── 5. Configure AgentFactory ────────────
+        // ── 6. Configure AgentFactory ────────────
         factory.setHookAddress(address(hook));
         console.log("Set hook address on AgentFactory");
 
-        factory.setBattleManager(address(battleManager));
-        console.log("Set BattleManager on AgentFactory");
+        factory.setMatchEngine(address(matchEngine));
+        console.log("Set MatchEngine on AgentFactory");
 
         vm.stopBroadcast();
 
@@ -95,7 +96,7 @@ contract Deploy is Script {
         console.log("USDC:           ", usdc);
         console.log("AgentFactory:   ", address(factory));
         console.log("GambitHook:     ", address(hook));
-        console.log("BattleManager:  ", address(battleManager));
+        console.log("MatchEngine:    ", address(matchEngine));
         console.log("Result Signer:  ", resultSigner);
         console.log("Treasury:       ", treasury);
         console.log("Creation Fee:   ", creationFee);

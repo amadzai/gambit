@@ -1,9 +1,20 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { MessageEvent } from '@nestjs/common';
 import { Subject, Observable } from 'rxjs';
-import { Color, GameStatus } from '../../../../generated/prisma/client.js';
+import { Color, GameStatus, Winner } from '../../../../generated/prisma/client.js';
 import { ChessRulesService } from '../../chess-service/providers/chess-rules.service.js';
 import { AgentService } from '../../agent-service/providers/agent-chess.service.js';
+import { SettlementSignerService } from '../../goat/wallet/settlement-signer.service.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { matchEngineAbi } from '../../goat/plugins/gambit/abis/match-engine.abi.js';
+import { getContractAddresses, baseSepolia } from '../../goat/constants/contracts.js';
+import {
+  createPublicClient,
+  createWalletClient,
+  http,
+  type Hex,
+} from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 import type {
   MatchStartRequest,
   MatchMoveEvent,
@@ -12,6 +23,8 @@ import type {
 const DEFAULT_MULTI_PV = 10;
 const DEFAULT_MOVETIME_MS = 1500;
 // const DEFAULT_DELAY_MS = 2000;
+
+const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000' as const;
 
 @Injectable()
 export class MatchService {
@@ -23,6 +36,8 @@ export class MatchService {
   constructor(
     private readonly agentService: AgentService,
     private readonly chessRulesService: ChessRulesService,
+    private readonly settlementSigner: SettlementSignerService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -46,6 +61,7 @@ export class MatchService {
       multiPv: req.multiPv,
       movetimeMs: req.movetimeMs,
       delayMs: req.delayMs,
+      onChainMatchId: req.onChainMatchId,
     }).catch((error) => {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error(`Match loop fatal error gameId=${game.id}: ${message}`);
@@ -74,7 +90,12 @@ export class MatchService {
     gameId: string,
     whiteAgentId: string,
     blackAgentId: string,
-    opts: { multiPv?: number; movetimeMs?: number; delayMs?: number },
+    opts: {
+      multiPv?: number;
+      movetimeMs?: number;
+      delayMs?: number;
+      onChainMatchId?: string;
+    },
   ): Promise<void> {
     const subject = this.streams.get(gameId);
     if (!subject) return;
@@ -154,6 +175,18 @@ export class MatchService {
           this.logger.log(
             `Match ended gameId=${gameId} status=${result.moveResult.game.status} winner=${result.moveResult.game.winner ?? 'none'} halfMoves=${halfMoveCount}`,
           );
+
+          // Attempt on-chain settlement if we have an on-chain match ID
+          if (opts.onChainMatchId) {
+            await this.settleOnChain(
+              opts.onChainMatchId,
+              gameId,
+              whiteAgentId,
+              blackAgentId,
+              result.moveResult.game.winner ?? null,
+            );
+          }
+
           break;
         }
 
@@ -171,6 +204,113 @@ export class MatchService {
       subject.complete();
       this.streams.delete(gameId);
       this.logger.log(`Match stream closed gameId=${gameId}`);
+    }
+  }
+
+  /**
+   * Settle an on-chain match after the chess game ends.
+   * Maps the chess Winner to the agent's token address and calls MatchEngine.settleMatch.
+   */
+  private async settleOnChain(
+    onChainMatchId: string,
+    gameId: string,
+    whiteAgentId: string,
+    blackAgentId: string,
+    winner: Winner | null,
+  ): Promise<void> {
+    try {
+      // Determine the winner token address
+      let winnerToken: string;
+
+      if (winner === Winner.DRAW || winner === null) {
+        winnerToken = ADDRESS_ZERO;
+      } else {
+        const winnerAgentId =
+          winner === Winner.WHITE ? whiteAgentId : blackAgentId;
+        const agent = await this.prisma.agent.findUnique({
+          where: { id: winnerAgentId },
+          select: { tokenAddress: true },
+        });
+
+        if (!agent?.tokenAddress) {
+          this.logger.warn(
+            `Cannot settle on-chain: winner agent ${winnerAgentId} has no token address`,
+          );
+          return;
+        }
+        winnerToken = agent.tokenAddress;
+      }
+
+      // Sign the settlement
+      const signature = await this.settlementSigner.signSettlement(
+        onChainMatchId,
+        winnerToken,
+      );
+
+      // Send the settlement transaction using the backend signer
+      const signerPrivateKey = process.env.RESULT_SIGNER_PRIVATE_KEY;
+      if (!signerPrivateKey) {
+        this.logger.warn('RESULT_SIGNER_PRIVATE_KEY not set — skipping on-chain settlement');
+        return;
+      }
+
+      const account = privateKeyToAccount(signerPrivateKey as Hex);
+      const transport = http(process.env.RPC_URL ?? 'https://sepolia.base.org');
+
+      const publicClient = createPublicClient({
+        chain: baseSepolia,
+        transport,
+      });
+
+      const walletClient = createWalletClient({
+        account,
+        chain: baseSepolia,
+        transport,
+      });
+
+      const matchEngineAddress = getContractAddresses().MATCH_ENGINE;
+
+      const { request } = await publicClient.simulateContract({
+        account,
+        address: matchEngineAddress,
+        abi: matchEngineAbi,
+        functionName: 'settleMatch',
+        args: [
+          onChainMatchId as Hex,
+          winnerToken as `0x${string}`,
+          signature as Hex,
+        ],
+      });
+
+      const txHash = await walletClient.writeContract(request);
+
+      this.logger.log(
+        `On-chain settlement submitted matchId=${onChainMatchId} winnerToken=${winnerToken} txHash=${txHash}`,
+      );
+
+      // Update the Match record in DB if it exists
+      // Note: requires `prisma generate` after schema update to add the Match model
+      await (this.prisma as any).match
+        ?.update({
+          where: { onChainMatchId },
+          data: {
+            status: 'SETTLED',
+            winnerTokenAddress: winnerToken,
+            chessGameId: gameId,
+            settleTxHash: txHash,
+          },
+        })
+        ?.catch(() => {
+          // Match record may not exist yet if not tracked in DB
+          this.logger.debug(
+            `No Match record found for onChainMatchId=${onChainMatchId} — skipping DB update`,
+          );
+        });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `On-chain settlement failed matchId=${onChainMatchId}: ${msg}`,
+      );
     }
   }
 

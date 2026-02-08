@@ -19,6 +19,15 @@ import {FullMath} from "v4-core/libraries/FullMath.sol";
 import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmounts.sol";
 import "./AgentToken.sol";
 
+interface IAllowanceTransfer {
+    function approve(
+        address token,
+        address spender,
+        uint160 amount,
+        uint48 expiration
+    ) external;
+}
+
 /**
  * @title AgentFactory
  * @notice Creates AI chess agents with tradeable ERC20 tokens on Uniswap V4
@@ -37,20 +46,32 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
     /// @notice Uniswap V4 PositionManager
     IPositionManager public immutable positionManager;
 
-    /// @notice BattleManager contract address
-    address public battleManager;
+    /// @notice MatchEngine contract address
+    address public matchEngine;
 
     /// @notice Hook contract address
     address public hookAddress;
 
+    /// @notice Canonical Permit2 address
+    address public constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
+
     /// @notice Fee to create an agent (in USDC, 6 decimals)
     uint256 public creationFee;
+
+    /// @notice 70% of USDC deposit goes to LP
+    uint256 public constant LP_BPS = 7000;
+
+    /// @notice 30% of USDC deposit goes to agent wallet as war chest
+    uint256 public constant RESERVE_BPS = 3000;
 
     /// @notice Percentage of tokens/USDC going to user LP (basis points, 5000 = 50%)
     uint256 public constant USER_LP_PERCENTAGE = 5000;
 
     /// @notice Percentage of tokens/USDC going to agent LP (basis points, 5000 = 50%)
     uint256 public constant AGENT_LP_PERCENTAGE = 5000;
+
+    /// @notice ETH amount sent to agent wallet on creation for gas
+    uint256 public constant AGENT_ETH_FUNDING = 0.01 ether;
 
     /// @notice Uniswap V4 pool fee (3000 = 0.3%)
     uint24 public constant POOL_FEE = 3000;
@@ -90,9 +111,12 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
         uint256 usdcAmount
     );
 
-    event BattleManagerUpdated(address indexed newBattleManager);
+    event MatchEngineUpdated(address indexed newMatchEngine);
     event CreationFeeUpdated(uint256 newFee);
     event HookAddressUpdated(address indexed newHook);
+    event EthDeposited(address indexed sender, uint256 amount);
+    event EthWithdrawn(address indexed to, uint256 amount);
+    event BuyOwnToken(address indexed agentToken, address indexed agentWallet, uint256 usdcAmount);
 
     error InvalidAddress();
     error InvalidAmount();
@@ -100,6 +124,9 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
     error InsufficientUSDC();
     error PoolInitializationFailed();
     error LiquidityAdditionFailed();
+    error InsufficientETH();
+    error ETHTransferFailed();
+    error NotAgentWallet();
 
     /**
      * @notice Deploy the AgentFactory
@@ -140,6 +167,7 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
     ) external nonReentrant returns (address tokenAddress) {
         if (usdcAmount < creationFee) revert InsufficientUSDC();
         if (agentWallet == address(0)) revert InvalidAddress();
+        if (address(this).balance < AGENT_ETH_FUNDING) revert InsufficientETH();
 
         // Transfer USDC from creator
         if (!usdc.transferFrom(msg.sender, address(this), usdcAmount)) {
@@ -152,13 +180,26 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
 
         if (agents[tokenAddress].exists) revert AgentAlreadyExists();
 
-        // Calculate 50/50 split
+        // 70/30 split: 70% USDC → LP, 30% USDC → agent wallet (war chest)
+        uint256 lpUsdc = (usdcAmount * LP_BPS) / 10000;
+        uint256 reserveUsdc = usdcAmount - lpUsdc;
+
+        // Send 30% USDC to agent wallet as war chest
+        if (!usdc.transfer(agentWallet, reserveUsdc)) {
+            revert InsufficientUSDC();
+        }
+
+        // Fund agent wallet with ETH for gas — useful for testing since agent wallets are created on agent creation
+        (bool ethSent,) = agentWallet.call{value: AGENT_ETH_FUNDING}("");
+        if (!ethSent) revert ETHTransferFailed();
+
+        // Calculate 50/50 LP split on the 70% LP portion
         uint256 totalSupply = token.totalSupply();
         uint256 userTokens = (totalSupply * USER_LP_PERCENTAGE) / 10000;
         uint256 agentTokens = totalSupply - userTokens; // remainder to avoid rounding dust
 
-        uint256 userUsdc = (usdcAmount * USER_LP_PERCENTAGE) / 10000;
-        uint256 agentUsdc = usdcAmount - userUsdc;
+        uint256 userUsdc = (lpUsdc * USER_LP_PERCENTAGE) / 10000;
+        uint256 agentUsdc = lpUsdc - userUsdc;
 
         // Create Uniswap V4 pool
         PoolKey memory poolKey = _createPoolKey(tokenAddress);
@@ -172,9 +213,23 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
             revert PoolInitializationFailed();
         }
 
-        // Approve tokens for position manager
-        token.approve(address(positionManager), totalSupply);
-        usdc.approve(address(positionManager), usdcAmount);
+        // Approve Permit2 to spend tokens on behalf of this contract
+        token.approve(PERMIT2, totalSupply);
+        usdc.approve(PERMIT2, lpUsdc);
+
+        // Approve PositionManager via Permit2's allowance transfer
+        IAllowanceTransfer(PERMIT2).approve(
+            address(token),
+            address(positionManager),
+            type(uint160).max,
+            uint48(block.timestamp + 60)
+        );
+        IAllowanceTransfer(PERMIT2).approve(
+            address(usdc),
+            address(positionManager),
+            type(uint160).max,
+            uint48(block.timestamp + 60)
+        );
 
         // Add user's LP position (50% tokens + 50% USDC → mint to msg.sender)
         uint256 userPositionId = _addLiquidity(poolKey, userTokens, userUsdc, msg.sender);
@@ -256,14 +311,88 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
     }
 
     /**
-     * @notice Update BattleManager address (only owner)
-     * @param _battleManager New BattleManager address
+     * @notice Update MatchEngine address (only owner)
+     * @param _matchEngine New MatchEngine address
      */
-    function setBattleManager(address _battleManager) external onlyOwner {
-        if (_battleManager == address(0)) revert InvalidAddress();
-        battleManager = _battleManager;
-        emit BattleManagerUpdated(_battleManager);
+    function setMatchEngine(address _matchEngine) external onlyOwner {
+        if (_matchEngine == address(0)) revert InvalidAddress();
+        matchEngine = _matchEngine;
+        emit MatchEngineUpdated(_matchEngine);
     }
+
+    /**
+     * @notice Deposit ETH into the factory for funding agent wallets
+     */
+    function depositEth() external payable onlyOwner {
+        emit EthDeposited(msg.sender, msg.value);
+    }
+
+    /**
+     * @notice Withdraw ETH from the factory
+     * @param amount Amount of ETH to withdraw
+     */
+    function withdrawEth(uint256 amount) external onlyOwner {
+        if (address(this).balance < amount) revert InsufficientETH();
+        (bool sent,) = msg.sender.call{value: amount}("");
+        if (!sent) revert ETHTransferFailed();
+        emit EthWithdrawn(msg.sender, amount);
+    }
+
+    /**
+     * @notice Allow an agent wallet to buy its own token using USDC (increases price → market cap → ELO)
+     * @param agentToken Address of the agent token to buy
+     * @param usdcAmount Amount of USDC to spend
+     */
+    function buyOwnToken(address agentToken, uint256 usdcAmount) external nonReentrant {
+        AgentInfo memory info = agents[agentToken];
+        if (!info.exists) revert InvalidAddress();
+        if (msg.sender != info.agentWallet) revert NotAgentWallet();
+        if (usdcAmount == 0) revert InvalidAmount();
+
+        // Transfer USDC from agent wallet to this contract
+        if (!usdc.transferFrom(msg.sender, address(this), usdcAmount)) {
+            revert InsufficientUSDC();
+        }
+
+        // Approve Permit2 and PositionManager for the swap
+        usdc.approve(PERMIT2, usdcAmount);
+        IAllowanceTransfer(PERMIT2).approve(
+            address(usdc),
+            address(positionManager),
+            type(uint160).max,
+            uint48(block.timestamp + 60)
+        );
+
+        PoolKey memory poolKey = _createPoolKey(agentToken);
+        bool zeroForOne = address(usdc) < agentToken;
+
+        bytes memory actions = abi.encodePacked(
+            uint8(Actions.SWAP_EXACT_IN_SINGLE),
+            uint8(Actions.SETTLE),
+            uint8(Actions.TAKE)
+        );
+
+        Currency inputCurrency = zeroForOne ? poolKey.currency0 : poolKey.currency1;
+        Currency outputCurrency = zeroForOne ? poolKey.currency1 : poolKey.currency0;
+
+        bytes[] memory params = new bytes[](3);
+        params[0] = abi.encode(
+            poolKey,
+            zeroForOne,
+            usdcAmount,
+            0,   // amountOutMin (hackathon: 0, production: add slippage)
+            ""   // hookData
+        );
+        params[1] = abi.encode(inputCurrency, usdcAmount, false);
+        params[2] = abi.encode(outputCurrency, msg.sender, 0);
+
+        positionManager.modifyLiquidities(abi.encode(actions, params), block.timestamp + 60);
+
+        emit BuyOwnToken(agentToken, msg.sender, usdcAmount);
+    }
+
+    /// @notice Allow the factory to receive ETH
+    receive() external payable {}
 
     /**
      * @notice Update creation fee (only owner)
@@ -308,7 +437,7 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
             currency1: currency1,
             fee: POOL_FEE,
             tickSpacing: TICK_SPACING,
-            hooks: IHooks(hookAddress)
+            hooks: IHooks(address(0)) // Explicitly hookless pool
         });
     }
 

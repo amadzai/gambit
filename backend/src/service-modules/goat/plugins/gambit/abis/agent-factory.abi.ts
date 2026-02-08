@@ -87,4 +87,14 @@ export const agentFactoryAbi = [
       { name: 'usdcAmount', type: 'uint256', indexed: false },
     ],
   },
+  {
+    type: 'function',
+    name: 'buyOwnToken',
+    inputs: [
+      { name: 'agentToken', type: 'address', internalType: 'address' },
+      { name: 'usdcAmount', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
 ] as const;

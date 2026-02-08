@@ -40,6 +40,31 @@ model ChessGame {
   whiteAgent Agent @relation("WhiteGames", fields: [whiteAgentId], references: [id])
   blackAgent Agent @relation("BlackGames", fields: [blackAgentId], references: [id])
 
+  match Match?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum OnChainMatchStatus {
+  PENDING
+  ACTIVE
+  SETTLED
+  CANCELLED
+}
+
+model Match {
+  id                 String              @id @default(cuid())
+  onChainMatchId     String              @unique
+  agent1TokenAddress String
+  agent2TokenAddress String
+  stakeAmount        String
+  status             OnChainMatchStatus  @default(PENDING)
+  winnerTokenAddress String?
+  chessGameId        String?             @unique
+  chessGame          ChessGame?          @relation(fields: [chessGameId], references: [id])
+  settleTxHash       String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

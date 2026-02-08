@@ -1,7 +1,10 @@
 import type { PrivyClientConfig } from "@privy-io/react-auth";
+import { baseSepolia } from "wagmi/chains";
 
-// Chains here should match wagmiConfig chains (supportedChains)
+// Default and only chain: Base Sepolia (must match wagmiConfig)
 export const privyConfig: PrivyClientConfig = {
+  defaultChain: baseSepolia,
+  supportedChains: [baseSepolia],
   embeddedWallets: {
     ethereum: {
       createOnLogin: "users-without-wallets",
