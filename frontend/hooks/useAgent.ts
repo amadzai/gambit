@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiService } from '@/utils/apiService';
 import type { Agent } from '@/types/agent';
 import type { ChessGame } from '@/types/chess';
@@ -32,6 +32,8 @@ export interface UseAgentResult {
   isLoading: boolean;
   /** Error from API calls, if any. */
   error: Error | null;
+  /** Re-fetch agent data from the backend. */
+  refetch: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -79,6 +81,11 @@ export function useAgent(agentId: string | null): UseAgentResult {
   const [recentMatches, setRecentMatches] = useState<AgentRecentMatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [fetchKey, setFetchKey] = useState(0);
+
+  const refetch = useCallback(() => {
+    setFetchKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     if (!agentId) {
@@ -165,7 +172,7 @@ export function useAgent(agentId: string | null): UseAgentResult {
     return () => {
       cancelled = true;
     };
-  }, [agentId]);
+  }, [agentId, fetchKey]);
 
-  return { agent, recentMatches, isLoading, error };
+  return { agent, recentMatches, isLoading, error, refetch };
 }

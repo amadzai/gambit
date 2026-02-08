@@ -151,3 +151,47 @@ export function getAgentTokenPrice(
     return rawPrice;
   }
 }
+
+// ── Market Cap → ELO mapping ────────────────────────────────────────
+// const ELO_SCALE = 500;
+// /** Initial market cap: $0.000001/token * 1B tokens = $1,000 */
+// const INITIAL_MARKET_CAP = 1_000;
+
+const ELO_MIN = 600;
+const ELO_MAX = 3000;
+
+// /**
+//  * Convert a market cap (in USDC) to an ELO rating using a log scale.
+//  *
+//  * Formula: ELO = 1000 + 500 * log10(marketCap / 1_000)
+//  *
+//  * - Initial market cap ($1,000 at $0.000001/token) → ELO 1000
+//  * - ~$4.60 of market cap change per 1 ELO point near the starting point
+//  * - Clamped to [600, 3000] to match Stockfish's useful range
+//  */
+// export function marketCapToElo(marketCap: number): number {
+//   if (marketCap <= 0) return ELO_MIN;
+//   const raw = BASE_ELO + ELO_SCALE * Math.log10(marketCap / INITIAL_MARKET_CAP);
+//   return Math.round(Math.min(ELO_MAX, Math.max(ELO_MIN, raw)));
+// }
+
+/** Dollars of USDC spent per 1 ELO point. */
+const USDC_PER_ELO = 10;
+
+/**
+ * Compute the new ELO after a trade.
+ *
+ *
+ * @param currentElo The agent's current ELO rating.
+ * @param usdcAmount The USDC amount traded (human-readable, e.g. 10 for $10).
+ * @param isBuy True if buying (ELO goes up), false if selling (ELO goes down).
+ */
+export function computeNewElo(
+  currentElo: number,
+  usdcAmount: number,
+  isBuy: boolean,
+): number {
+  const delta = usdcAmount / USDC_PER_ELO;
+  const raw = isBuy ? currentElo + delta : currentElo - delta;
+  return Math.round(Math.min(ELO_MAX, Math.max(ELO_MIN, raw)));
+}

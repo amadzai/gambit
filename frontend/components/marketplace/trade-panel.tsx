@@ -64,7 +64,7 @@ export function TradePanel({ price, agentName, holdings, onBuy, onSell }: TradeP
       <div className="flex gap-2 mb-6">
         <button
           onClick={() => setTradeType("buy")}
-          className={`flex-1 py-2.5 rounded-lg font-medium transition-colors ${
+          className={`flex-1 py-2.5 rounded-lg font-medium transition-colors !cursor-pointer ${
             tradeType === "buy"
               ? "bg-green-600 text-white"
               : "bg-slate-800 text-slate-400 hover:bg-slate-700"
@@ -74,7 +74,7 @@ export function TradePanel({ price, agentName, holdings, onBuy, onSell }: TradeP
         </button>
         <button
           onClick={() => setTradeType("sell")}
-          className={`flex-1 py-2.5 rounded-lg font-medium transition-colors ${
+          className={`flex-1 py-2.5 rounded-lg font-medium transition-colors !cursor-pointer ${
             tradeType === "sell"
               ? "bg-red-600 text-white"
               : "bg-slate-800 text-slate-400 hover:bg-slate-700"
