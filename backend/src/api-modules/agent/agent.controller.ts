@@ -25,6 +25,7 @@ import {
   AgentMoveDto,
   CreateAgentDto,
   ExecuteAgentActionDto,
+  ManageReservesDto,
   RegisterTokenDto,
   UpdateAgentDto,
 } from './dto/agent.dto.js';
@@ -242,6 +243,28 @@ export class AgentController {
       dto.systemPrompt,
     );
 
+    return { result };
+  }
+
+  @Post(':id/manage-reserves')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Trigger autonomous reserve management — agent decides to save, buyback, or reward creator',
+  })
+  @ApiParam({ name: 'id', description: 'Agent ID' })
+  @ApiBody({ type: ManageReservesDto, required: false })
+  @ApiResponse({
+    status: 200,
+    description: 'Reserve management decision executed',
+    type: ExecuteAgentActionResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Agent not found or missing token address' })
+  async manageReserves(
+    @Param('id') id: string,
+    @Body() dto?: ManageReservesDto,
+  ): Promise<ExecuteAgentActionResponseDto> {
+    const result = await this.goatService.manageReserves(id, dto?.hint);
     return { result };
   }
 }

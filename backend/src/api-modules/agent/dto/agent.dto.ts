@@ -198,6 +198,17 @@ export class ExecuteAgentActionDto {
   systemPrompt?: string;
 }
 
+export class ManageReservesDto {
+  @ApiPropertyOptional({
+    description:
+      'Optional hint to nudge the agent toward a particular reserve action',
+    example: 'Consider buying back your token to boost your ELO.',
+  })
+  @IsOptional()
+  @IsString()
+  hint?: string;
+}
+
 export class RegisterTokenDto {
   @ApiProperty({
     description:

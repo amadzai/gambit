@@ -3,6 +3,7 @@ import { EVMWalletClient } from '@goat-sdk/wallet-evm';
 import { parseAbi, parseUnits } from 'viem';
 import {
   ApproveUsdcParams,
+  ApproveTokenParams,
   GetMyTokenBalanceParams,
   SendUsdcParams,
   TransferTokenParams,
@@ -41,17 +42,27 @@ export class Erc20WalletService {
   ): Promise<string> {
     void _parameters;
     const wallet = walletClient.getAddress();
+    console.log(
+      `[ERC20Wallet] getMyUsdcBalance called — wallet=${wallet}, usdc=${this.usdcAddress}`,
+    );
 
-    const rawBalance = await walletClient.read({
-      address: this.usdcAddress,
-      abi: erc20Abi,
-      functionName: 'balanceOf',
-      args: [wallet],
-    });
+    try {
+      const rawBalance = await walletClient.read({
+        address: this.usdcAddress,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [wallet],
+      });
 
-    const formatted = Number(rawBalance.value) / 10 ** USDC_DECIMALS;
-
-    return `USDC balance for ${wallet}: ${formatted} USDC (${String(rawBalance.value)} base units, ${USDC_DECIMALS} decimals)`;
+      const formatted = Number(rawBalance.value) / 10 ** USDC_DECIMALS;
+      const output = `USDC balance for ${wallet}: ${formatted} USDC (${String(rawBalance.value)} base units, ${USDC_DECIMALS} decimals)`;
+      console.log(`[ERC20Wallet] getMyUsdcBalance result: ${output}`);
+      return output;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[ERC20Wallet] getMyUsdcBalance failed: ${msg}`);
+      return `Get USDC balance failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -63,32 +74,42 @@ export class Erc20WalletService {
     parameters: GetMyTokenBalanceParams,
   ): Promise<string> {
     const wallet = walletClient.getAddress();
-    const tokenAddr = parameters.tokenAddress as `0x${string}`;
+    const tokenAddr = (parameters.tokenAddress ?? (parameters as any).token_address) as `0x${string}`;
+    console.log(
+      `[ERC20Wallet] getMyTokenBalance called — wallet=${wallet}, token=${tokenAddr}`,
+    );
 
-    const [rawBalance, rawDecimals, rawSymbol] = await Promise.all([
-      walletClient.read({
-        address: tokenAddr,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [wallet],
-      }),
-      walletClient.read({
-        address: tokenAddr,
-        abi: erc20Abi,
-        functionName: 'decimals',
-      }),
-      walletClient.read({
-        address: tokenAddr,
-        abi: erc20Abi,
-        functionName: 'symbol',
-      }),
-    ]);
+    try {
+      const [rawBalance, rawDecimals, rawSymbol] = await Promise.all([
+        walletClient.read({
+          address: tokenAddr,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [wallet],
+        }),
+        walletClient.read({
+          address: tokenAddr,
+          abi: erc20Abi,
+          functionName: 'decimals',
+        }),
+        walletClient.read({
+          address: tokenAddr,
+          abi: erc20Abi,
+          functionName: 'symbol',
+        }),
+      ]);
 
-    const decimals = Number(rawDecimals.value);
-    const symbol = String(rawSymbol.value);
-    const formatted = Number(rawBalance.value) / 10 ** decimals;
-
-    return `${symbol} balance for ${wallet}: ${formatted} ${symbol} (${String(rawBalance.value)} base units, ${decimals} decimals)`;
+      const decimals = Number(rawDecimals.value);
+      const symbol = String(rawSymbol.value);
+      const formatted = Number(rawBalance.value) / 10 ** decimals;
+      const output = `${symbol} balance for ${wallet}: ${formatted} ${symbol} (${String(rawBalance.value)} base units, ${decimals} decimals)`;
+      console.log(`[ERC20Wallet] getMyTokenBalance result: ${output}`);
+      return output;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[ERC20Wallet] getMyTokenBalance failed: ${msg}`);
+      return `Get token balance failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -102,15 +123,24 @@ export class Erc20WalletService {
     const amount = String(parameters.amount);
     const to = String(parameters.to);
     const baseUnits = parseUnits(amount, USDC_DECIMALS);
+    console.log(
+      `[ERC20Wallet] sendUsdc called — to=${to}, amount=${amount} USDC (${baseUnits} base units), usdc=${this.usdcAddress}`,
+    );
 
-    const { hash } = await walletClient.sendTransaction({
-      to: this.usdcAddress,
-      abi: erc20Abi,
-      functionName: 'transfer',
-      args: [to, baseUnits],
-    });
-
-    return `Sent ${amount} USDC to ${to}. Transaction hash: ${hash}`;
+    try {
+      const { hash } = await walletClient.sendTransaction({
+        to: this.usdcAddress,
+        abi: erc20Abi,
+        functionName: 'transfer',
+        args: [to, baseUnits],
+      });
+      console.log(`[ERC20Wallet] sendUsdc tx sent — hash=${hash}`);
+      return `Sent ${amount} USDC to ${to}. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[ERC20Wallet] sendUsdc failed: ${msg}`);
+      return `Send USDC failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -121,26 +151,35 @@ export class Erc20WalletService {
     walletClient: EVMWalletClient,
     parameters: TransferTokenParams,
   ): Promise<string> {
-    const tokenAddr = String(parameters.tokenAddress) as `0x${string}`;
+    const tokenAddr = String(parameters.tokenAddress ?? (parameters as any).token_address) as `0x${string}`;
     const amount = String(parameters.amount);
     const to = String(parameters.to);
+    console.log(
+      `[ERC20Wallet] transferToken called — token=${tokenAddr}, to=${to}, amount=${amount}`,
+    );
 
-    const rawDecimals = await walletClient.read({
-      address: tokenAddr,
-      abi: erc20Abi,
-      functionName: 'decimals',
-    });
-    const decimals = Number(rawDecimals.value);
-    const baseUnits = parseUnits(amount, decimals);
+    try {
+      const rawDecimals = await walletClient.read({
+        address: tokenAddr,
+        abi: erc20Abi,
+        functionName: 'decimals',
+      });
+      const decimals = Number(rawDecimals.value);
+      const baseUnits = parseUnits(amount, decimals);
 
-    const { hash } = await walletClient.sendTransaction({
-      to: tokenAddr,
-      abi: erc20Abi,
-      functionName: 'transfer',
-      args: [to, baseUnits],
-    });
-
-    return `Sent ${amount} tokens to ${to}. Transaction hash: ${hash}`;
+      const { hash } = await walletClient.sendTransaction({
+        to: tokenAddr,
+        abi: erc20Abi,
+        functionName: 'transfer',
+        args: [to, baseUnits],
+      });
+      console.log(`[ERC20Wallet] transferToken tx sent — hash=${hash}`);
+      return `Sent ${amount} tokens to ${to}. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[ERC20Wallet] transferToken failed: ${msg}`);
+      return `Transfer token failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -154,14 +193,62 @@ export class Erc20WalletService {
     const amount = String(parameters.amount);
     const spender = String(parameters.spender);
     const baseUnits = parseUnits(amount, USDC_DECIMALS);
+    console.log(
+      `[ERC20Wallet] approveUsdc called — spender=${spender}, amount=${amount} USDC (${baseUnits} base units), usdc=${this.usdcAddress}`,
+    );
 
-    const { hash } = await walletClient.sendTransaction({
-      to: this.usdcAddress,
-      abi: erc20Abi,
-      functionName: 'approve',
-      args: [spender, baseUnits],
-    });
+    try {
+      const { hash } = await walletClient.sendTransaction({
+        to: this.usdcAddress,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [spender, baseUnits],
+      });
+      console.log(`[ERC20Wallet] approveUsdc tx sent — hash=${hash}`);
+      return `Approved ${amount} USDC for ${spender}. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[ERC20Wallet] approveUsdc failed: ${msg}`);
+      return `Approve USDC failed: ${msg}`;
+    }
+  }
 
-    return `Approved ${amount} USDC for ${spender}. Transaction hash: ${hash}`;
+  @Tool({
+    description:
+      'Approve a spender to spend any ERC20 token from the agent wallet. Provide the token address, spender address, and amount in human-readable units (e.g. "100" for 100 tokens). Decimal conversion is handled automatically.',
+  })
+  async approveToken(
+    walletClient: EVMWalletClient,
+    parameters: ApproveTokenParams,
+  ): Promise<string> {
+    const tokenAddr = String(parameters.tokenAddress ?? (parameters as any).token_address) as `0x${string}`;
+    const amount = String(parameters.amount);
+    const spender = String(parameters.spender);
+    console.log(
+      `[ERC20Wallet] approveToken called — token=${tokenAddr}, spender=${spender}, amount=${amount}`,
+    );
+
+    try {
+      const rawDecimals = await walletClient.read({
+        address: tokenAddr,
+        abi: erc20Abi,
+        functionName: 'decimals',
+      });
+      const decimals = Number(rawDecimals.value);
+      const baseUnits = parseUnits(amount, decimals);
+
+      const { hash } = await walletClient.sendTransaction({
+        to: tokenAddr,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [spender, baseUnits],
+      });
+      console.log(`[ERC20Wallet] approveToken tx sent — hash=${hash}`);
+      return `Approved ${amount} tokens (${tokenAddr}) for ${spender}. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[ERC20Wallet] approveToken failed: ${msg}`);
+      return `Approve token failed: ${msg}`;
+    }
   }
 }

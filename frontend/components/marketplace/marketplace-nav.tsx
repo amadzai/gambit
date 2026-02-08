@@ -5,8 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
+import { useConnection, useEnsName, useReadContract, useWriteContract } from 'wagmi';
 import { styledToast } from '@/components/ui/sonner';
-import { useConnection, useReadContract, useWriteContract } from 'wagmi';
 import { Plus, Droplets, LogOut, Loader2, Menu, X } from 'lucide-react';
 import { CreateAgentDialog } from '@/components/marketplace/create-agent-dialog';
 import {
@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { useWallet } from '@/hooks/useWallet';
 import { getUsdcAddress } from '@/lib/contracts/config';
 import erc20Abi from '@/lib/contracts/erc20.json';
-import { baseSepolia } from 'wagmi/chains';
+import { baseSepolia, mainnet } from 'wagmi/chains';
 import { useChainId, useSwitchChain } from 'wagmi';
 
 const USDC_DECIMALS = 6;
@@ -42,6 +42,7 @@ export function MarketplaceNav() {
   const pathname = usePathname();
   const { login, logout, authenticated, user } = usePrivy();
   const { address } = useWallet();
+  const { data: ensName } = useEnsName({ address: address as `0x${string}` | undefined, chainId: mainnet.id });
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isConnected } = useConnection();
@@ -155,9 +156,9 @@ export function MarketplaceNav() {
                       variant="outline"
                       className="bg-neutral-800 border-neutral-700 text-white px-6 py-2.5 rounded-lg text-sm hover:bg-neutral-700 hover:text-white"
                     >
-                      {user?.wallet?.address
+                      {ensName ?? (user?.wallet?.address
                         ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}`
-                        : 'Connected'}
+                        : 'Connected')}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent

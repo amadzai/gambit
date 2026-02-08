@@ -103,25 +103,36 @@ export class PositionService {
     walletClient: EVMWalletClient,
     parameters: GetPositionInfoParams,
   ): Promise<string> {
-    const tokenId = BigInt(parameters.tokenId);
-    const { poolKey, tickLower, tickUpper, liquidity } =
-      await this.readPositionInfo(walletClient, tokenId);
-
-    return JSON.stringify(
-      {
-        tokenId: parameters.tokenId,
-        currency0: poolKey.currency0,
-        currency1: poolKey.currency1,
-        fee: poolKey.fee,
-        tickSpacing: poolKey.tickSpacing,
-        hooks: poolKey.hooks,
-        tickLower,
-        tickUpper,
-        liquidity: liquidity.toString(),
-      },
-      null,
-      2,
+    console.log(
+      `[UniswapV4] getPositionInfo called — tokenId=${parameters.tokenId}`,
     );
+    try {
+      const tokenId = BigInt(parameters.tokenId);
+      const { poolKey, tickLower, tickUpper, liquidity } =
+        await this.readPositionInfo(walletClient, tokenId);
+
+      const output = JSON.stringify(
+        {
+          tokenId: parameters.tokenId,
+          currency0: poolKey.currency0,
+          currency1: poolKey.currency1,
+          fee: poolKey.fee,
+          tickSpacing: poolKey.tickSpacing,
+          hooks: poolKey.hooks,
+          tickLower,
+          tickUpper,
+          liquidity: liquidity.toString(),
+        },
+        null,
+        2,
+      );
+      console.log(`[UniswapV4] getPositionInfo result: ${output}`);
+      return output;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[UniswapV4] getPositionInfo failed: ${msg}`);
+      return `Get position info failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -132,61 +143,70 @@ export class PositionService {
     walletClient: EVMWalletClient,
     parameters: IncreaseLiquidityParams,
   ): Promise<string> {
-    const tokenId = BigInt(parameters.tokenId);
-    const amount0Desired = BigInt(parameters.amount0Desired);
-    const amount1Desired = BigInt(parameters.amount1Desired);
-
-    const { poolKey } = await this.readPositionInfo(walletClient, tokenId);
-
-    // Approve both tokens to PositionManager
-    await walletClient.sendTransaction({
-      to: poolKey.currency0 as `0x${string}`,
-      abi: ERC20_APPROVE_ABI as Abi,
-      functionName: 'approve',
-      args: [UNISWAP_V4.POSITION_MANAGER, MAX_UINT256],
-    });
-    await walletClient.sendTransaction({
-      to: poolKey.currency1 as `0x${string}`,
-      abi: ERC20_APPROVE_ABI as Abi,
-      functionName: 'approve',
-      args: [UNISWAP_V4.POSITION_MANAGER, MAX_UINT256],
-    });
-
-    // Encode INCREASE_LIQUIDITY action
-    const increaseParam = encodeAbiParameters(
-      [
-        { type: 'uint256', name: 'tokenId' },
-        { type: 'uint256', name: 'liquidity' },
-        { type: 'uint128', name: 'amount0Max' },
-        { type: 'uint128', name: 'amount1Max' },
-        { type: 'bytes', name: 'hookData' },
-      ],
-      [tokenId, amount0Desired, amount0Desired, amount1Desired, '0x'],
+    console.log(
+      `[UniswapV4] increaseLiquidity called — tokenId=${parameters.tokenId}, amount0=${parameters.amount0Desired}, amount1=${parameters.amount1Desired}`,
     );
+    try {
+      const tokenId = BigInt(parameters.tokenId);
+      const amount0Desired = BigInt(parameters.amount0Desired);
+      const amount1Desired = BigInt(parameters.amount1Desired);
 
-    // Encode CLOSE_CURRENCY for each token
-    const closeCurrency0 = encodeAbiParameters(
-      [{ type: 'address', name: 'currency' }],
-      [poolKey.currency0 as `0x${string}`],
-    );
-    const closeCurrency1 = encodeAbiParameters(
-      [{ type: 'address', name: 'currency' }],
-      [poolKey.currency1 as `0x${string}`],
-    );
+      const { poolKey } = await this.readPositionInfo(walletClient, tokenId);
 
-    const unlockData = this.encodeUnlockData(
-      [INCREASE_LIQUIDITY, CLOSE_CURRENCY, CLOSE_CURRENCY],
-      [increaseParam, closeCurrency0, closeCurrency1],
-    );
+      // Approve both tokens to PositionManager
+      await walletClient.sendTransaction({
+        to: poolKey.currency0 as `0x${string}`,
+        abi: ERC20_APPROVE_ABI as Abi,
+        functionName: 'approve',
+        args: [UNISWAP_V4.POSITION_MANAGER, MAX_UINT256],
+      });
+      await walletClient.sendTransaction({
+        to: poolKey.currency1 as `0x${string}`,
+        abi: ERC20_APPROVE_ABI as Abi,
+        functionName: 'approve',
+        args: [UNISWAP_V4.POSITION_MANAGER, MAX_UINT256],
+      });
 
-    const { hash } = await walletClient.sendTransaction({
-      to: UNISWAP_V4.POSITION_MANAGER,
-      abi: positionManagerAbi as Abi,
-      functionName: 'modifyLiquidities',
-      args: [unlockData, this.getDeadline()],
-    });
+      // Encode INCREASE_LIQUIDITY action
+      const increaseParam = encodeAbiParameters(
+        [
+          { type: 'uint256', name: 'tokenId' },
+          { type: 'uint256', name: 'liquidity' },
+          { type: 'uint128', name: 'amount0Max' },
+          { type: 'uint128', name: 'amount1Max' },
+          { type: 'bytes', name: 'hookData' },
+        ],
+        [tokenId, amount0Desired, amount0Desired, amount1Desired, '0x'],
+      );
 
-    return `Liquidity increased. Transaction hash: ${hash}`;
+      // Encode CLOSE_CURRENCY for each token
+      const closeCurrency0 = encodeAbiParameters(
+        [{ type: 'address', name: 'currency' }],
+        [poolKey.currency0 as `0x${string}`],
+      );
+      const closeCurrency1 = encodeAbiParameters(
+        [{ type: 'address', name: 'currency' }],
+        [poolKey.currency1 as `0x${string}`],
+      );
+
+      const unlockData = this.encodeUnlockData(
+        [INCREASE_LIQUIDITY, CLOSE_CURRENCY, CLOSE_CURRENCY],
+        [increaseParam, closeCurrency0, closeCurrency1],
+      );
+
+      const { hash } = await walletClient.sendTransaction({
+        to: UNISWAP_V4.POSITION_MANAGER,
+        abi: positionManagerAbi as Abi,
+        functionName: 'modifyLiquidities',
+        args: [unlockData, this.getDeadline()],
+      });
+      console.log(`[UniswapV4] increaseLiquidity tx sent — hash=${hash}`);
+      return `Liquidity increased. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[UniswapV4] increaseLiquidity failed: ${msg}`);
+      return `Increase liquidity failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -197,47 +217,56 @@ export class PositionService {
     walletClient: EVMWalletClient,
     parameters: DecreaseLiquidityParams,
   ): Promise<string> {
-    const tokenId = BigInt(parameters.tokenId);
-    const liquidityAmount = BigInt(parameters.liquidityAmount);
-    const amount0Min = BigInt(parameters.amount0Min);
-    const amount1Min = BigInt(parameters.amount1Min);
-
-    const { poolKey } = await this.readPositionInfo(walletClient, tokenId);
-
-    // Encode DECREASE_LIQUIDITY action
-    const decreaseParam = encodeAbiParameters(
-      [
-        { type: 'uint256', name: 'tokenId' },
-        { type: 'uint256', name: 'liquidity' },
-        { type: 'uint128', name: 'amount0Min' },
-        { type: 'uint128', name: 'amount1Min' },
-        { type: 'bytes', name: 'hookData' },
-      ],
-      [tokenId, liquidityAmount, amount0Min, amount1Min, '0x'],
+    console.log(
+      `[UniswapV4] decreaseLiquidity called — tokenId=${parameters.tokenId}, liquidityAmount=${parameters.liquidityAmount}`,
     );
+    try {
+      const tokenId = BigInt(parameters.tokenId);
+      const liquidityAmount = BigInt(parameters.liquidityAmount);
+      const amount0Min = BigInt(parameters.amount0Min);
+      const amount1Min = BigInt(parameters.amount1Min);
 
-    // Encode TAKE_PAIR to receive tokens
-    const takePairParam = encodeAbiParameters(
-      [
-        { type: 'address', name: 'currency0' },
-        { type: 'address', name: 'currency1' },
-      ],
-      [poolKey.currency0 as `0x${string}`, poolKey.currency1 as `0x${string}`],
-    );
+      const { poolKey } = await this.readPositionInfo(walletClient, tokenId);
 
-    const unlockData = this.encodeUnlockData(
-      [DECREASE_LIQUIDITY, TAKE_PAIR],
-      [decreaseParam, takePairParam],
-    );
+      // Encode DECREASE_LIQUIDITY action
+      const decreaseParam = encodeAbiParameters(
+        [
+          { type: 'uint256', name: 'tokenId' },
+          { type: 'uint256', name: 'liquidity' },
+          { type: 'uint128', name: 'amount0Min' },
+          { type: 'uint128', name: 'amount1Min' },
+          { type: 'bytes', name: 'hookData' },
+        ],
+        [tokenId, liquidityAmount, amount0Min, amount1Min, '0x'],
+      );
 
-    const { hash } = await walletClient.sendTransaction({
-      to: UNISWAP_V4.POSITION_MANAGER,
-      abi: positionManagerAbi as Abi,
-      functionName: 'modifyLiquidities',
-      args: [unlockData, this.getDeadline()],
-    });
+      // Encode TAKE_PAIR to receive tokens
+      const takePairParam = encodeAbiParameters(
+        [
+          { type: 'address', name: 'currency0' },
+          { type: 'address', name: 'currency1' },
+        ],
+        [poolKey.currency0 as `0x${string}`, poolKey.currency1 as `0x${string}`],
+      );
 
-    return `Liquidity decreased. Transaction hash: ${hash}`;
+      const unlockData = this.encodeUnlockData(
+        [DECREASE_LIQUIDITY, TAKE_PAIR],
+        [decreaseParam, takePairParam],
+      );
+
+      const { hash } = await walletClient.sendTransaction({
+        to: UNISWAP_V4.POSITION_MANAGER,
+        abi: positionManagerAbi as Abi,
+        functionName: 'modifyLiquidities',
+        args: [unlockData, this.getDeadline()],
+      });
+      console.log(`[UniswapV4] decreaseLiquidity tx sent — hash=${hash}`);
+      return `Liquidity decreased. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[UniswapV4] decreaseLiquidity failed: ${msg}`);
+      return `Decrease liquidity failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -248,43 +277,52 @@ export class PositionService {
     walletClient: EVMWalletClient,
     parameters: CollectFeesParams,
   ): Promise<string> {
-    const tokenId = BigInt(parameters.tokenId);
-
-    const { poolKey } = await this.readPositionInfo(walletClient, tokenId);
-
-    // Decrease with 0 liquidity to collect fees only
-    const decreaseParam = encodeAbiParameters(
-      [
-        { type: 'uint256', name: 'tokenId' },
-        { type: 'uint256', name: 'liquidity' },
-        { type: 'uint128', name: 'amount0Min' },
-        { type: 'uint128', name: 'amount1Min' },
-        { type: 'bytes', name: 'hookData' },
-      ],
-      [tokenId, 0n, 0n, 0n, '0x'],
+    console.log(
+      `[UniswapV4] collectFees called — tokenId=${parameters.tokenId}`,
     );
+    try {
+      const tokenId = BigInt(parameters.tokenId);
 
-    // Encode TAKE_PAIR to receive fee tokens
-    const takePairParam = encodeAbiParameters(
-      [
-        { type: 'address', name: 'currency0' },
-        { type: 'address', name: 'currency1' },
-      ],
-      [poolKey.currency0 as `0x${string}`, poolKey.currency1 as `0x${string}`],
-    );
+      const { poolKey } = await this.readPositionInfo(walletClient, tokenId);
 
-    const unlockData = this.encodeUnlockData(
-      [DECREASE_LIQUIDITY, TAKE_PAIR],
-      [decreaseParam, takePairParam],
-    );
+      // Decrease with 0 liquidity to collect fees only
+      const decreaseParam = encodeAbiParameters(
+        [
+          { type: 'uint256', name: 'tokenId' },
+          { type: 'uint256', name: 'liquidity' },
+          { type: 'uint128', name: 'amount0Min' },
+          { type: 'uint128', name: 'amount1Min' },
+          { type: 'bytes', name: 'hookData' },
+        ],
+        [tokenId, 0n, 0n, 0n, '0x'],
+      );
 
-    const { hash } = await walletClient.sendTransaction({
-      to: UNISWAP_V4.POSITION_MANAGER,
-      abi: positionManagerAbi as Abi,
-      functionName: 'modifyLiquidities',
-      args: [unlockData, this.getDeadline()],
-    });
+      // Encode TAKE_PAIR to receive fee tokens
+      const takePairParam = encodeAbiParameters(
+        [
+          { type: 'address', name: 'currency0' },
+          { type: 'address', name: 'currency1' },
+        ],
+        [poolKey.currency0 as `0x${string}`, poolKey.currency1 as `0x${string}`],
+      );
 
-    return `Fees collected. Transaction hash: ${hash}`;
+      const unlockData = this.encodeUnlockData(
+        [DECREASE_LIQUIDITY, TAKE_PAIR],
+        [decreaseParam, takePairParam],
+      );
+
+      const { hash } = await walletClient.sendTransaction({
+        to: UNISWAP_V4.POSITION_MANAGER,
+        abi: positionManagerAbi as Abi,
+        functionName: 'modifyLiquidities',
+        args: [unlockData, this.getDeadline()],
+      });
+      console.log(`[UniswapV4] collectFees tx sent — hash=${hash}`);
+      return `Fees collected. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[UniswapV4] collectFees failed: ${msg}`);
+      return `Collect fees failed: ${msg}`;
+    }
   }
 }

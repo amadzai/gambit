@@ -44,33 +44,43 @@ export class SwapService {
     walletClient: EVMWalletClient,
     parameters: SwapParams,
   ): Promise<string> {
-    const poolKey = this.buildPoolKey(parameters.tokenIn, parameters.tokenOut);
-    const zeroForOne =
-      parameters.tokenIn.toLowerCase() < parameters.tokenOut.toLowerCase();
+    console.log(
+      `[UniswapV4] swapExactInput called — tokenIn=${parameters.tokenIn}, tokenOut=${parameters.tokenOut}, amountIn=${parameters.amountIn}, hook=${this.hookAddress}`,
+    );
+    try {
+      const poolKey = this.buildPoolKey(parameters.tokenIn, parameters.tokenOut);
+      const zeroForOne =
+        parameters.tokenIn.toLowerCase() < parameters.tokenOut.toLowerCase();
 
-    const sqrtPriceLimit = zeroForOne
-      ? MIN_SQRT_PRICE_LIMIT
-      : MAX_SQRT_PRICE_LIMIT;
+      const sqrtPriceLimit = zeroForOne
+        ? MIN_SQRT_PRICE_LIMIT
+        : MAX_SQRT_PRICE_LIMIT;
 
-    const { hash } = await walletClient.sendTransaction({
-      to: UNISWAP_V4.POOL_SWAP_TEST,
-      abi: poolSwapTestAbi as Abi,
-      functionName: 'swap',
-      args: [
-        poolKey,
-        {
-          zeroForOne,
-          amountSpecified: -BigInt(parameters.amountIn), // negative = exact input
-          sqrtPriceLimitX96: sqrtPriceLimit,
-        },
-        {
-          takeClaims: false,
-          settleUsingBurn: false,
-        },
-        '0x', // hookData
-      ],
-    });
-    return `Swap executed. Transaction hash: ${hash}`;
+      const { hash } = await walletClient.sendTransaction({
+        to: UNISWAP_V4.POOL_SWAP_TEST,
+        abi: poolSwapTestAbi as Abi,
+        functionName: 'swap',
+        args: [
+          poolKey,
+          {
+            zeroForOne,
+            amountSpecified: -BigInt(parameters.amountIn), // negative = exact input
+            sqrtPriceLimitX96: sqrtPriceLimit,
+          },
+          {
+            takeClaims: false,
+            settleUsingBurn: false,
+          },
+          '0x', // hookData
+        ],
+      });
+      console.log(`[UniswapV4] swapExactInput tx sent — hash=${hash}`);
+      return `Swap executed. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[UniswapV4] swapExactInput failed: ${msg}`);
+      return `Swap failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -81,26 +91,37 @@ export class SwapService {
     walletClient: EVMWalletClient,
     parameters: GetQuoteParams,
   ): Promise<string> {
-    const poolKey = this.buildPoolKey(parameters.tokenIn, parameters.tokenOut);
-    const zeroForOne =
-      parameters.tokenIn.toLowerCase() < parameters.tokenOut.toLowerCase();
+    console.log(
+      `[UniswapV4] getQuote called — tokenIn=${parameters.tokenIn}, tokenOut=${parameters.tokenOut}, amountIn=${parameters.amountIn}, hook=${this.hookAddress}`,
+    );
+    try {
+      const poolKey = this.buildPoolKey(parameters.tokenIn, parameters.tokenOut);
+      const zeroForOne =
+        parameters.tokenIn.toLowerCase() < parameters.tokenOut.toLowerCase();
 
-    const result = await walletClient.read({
-      address: UNISWAP_V4.QUOTER,
-      abi: quoterAbi as Abi,
-      functionName: 'quoteExactInputSingle',
-      args: [
-        {
-          poolKey,
-          zeroForOne,
-          exactAmount: BigInt(parameters.amountIn),
-          sqrtPriceLimitX96: 0n,
-          hookData: '0x',
-        },
-      ],
-    });
+      const result = await walletClient.read({
+        address: UNISWAP_V4.QUOTER,
+        abi: quoterAbi as Abi,
+        functionName: 'quoteExactInputSingle',
+        args: [
+          {
+            poolKey,
+            zeroForOne,
+            exactAmount: BigInt(parameters.amountIn),
+            sqrtPriceLimitX96: 0n,
+            hookData: '0x',
+          },
+        ],
+      });
 
-    const [amountOut, gasEstimate] = result.value as [bigint, bigint];
-    return `Quote: ${amountOut.toString()} output tokens (gas estimate: ${gasEstimate.toString()})`;
+      const [amountOut, gasEstimate] = result.value as [bigint, bigint];
+      const output = `Quote: ${amountOut.toString()} output tokens (gas estimate: ${gasEstimate.toString()})`;
+      console.log(`[UniswapV4] getQuote result: ${output}`);
+      return output;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[UniswapV4] getQuote failed: ${msg}`);
+      return `Get quote failed: ${msg}`;
+    }
   }
 }

@@ -22,23 +22,50 @@ export class MatchEngineService {
 
   @Tool({
     description:
-      'Challenge another AI agent to a chess match with a staked amount of USDC. Pass agent wallet addresses (not token addresses).',
+      'Challenge another AI agent to a chess match with a staked amount of USDC. Pass agent token addresses (not wallet addresses).',
   })
   async challenge(
     walletClient: EVMWalletClient,
     parameters: ChallengeParams,
   ): Promise<string> {
-    const { hash } = await walletClient.sendTransaction({
-      to: this.contractAddress,
-      abi: matchEngineAbi as unknown as Abi,
-      functionName: 'challenge',
-      args: [
-        parameters.myAgentWallet,
-        parameters.opponentWallet,
-        BigInt(String(parameters.stakeAmount)),
-      ],
-    });
-    return `Challenge created. Transaction hash: ${hash}`;
+    const raw = parameters as Record<string, unknown>;
+    console.log('[MatchEngine] challenge raw parameters:', JSON.stringify(raw));
+    const myAgentToken =
+      parameters.myAgentToken ?? raw.my_agent_token;
+    const opponentToken =
+      parameters.opponentToken ?? raw.opponent_token;
+    const stakeResolved =
+      parameters.stakeAmount ?? raw.stake_amount ?? raw.amount ?? raw.stake;
+    const stakeStr =
+      stakeResolved != null && stakeResolved !== ''
+        ? String(stakeResolved)
+        : '';
+    if (!stakeStr || stakeStr === 'undefined') {
+      throw new Error(
+        'challenge tool requires stakeAmount (USDC base units). Use the exact parameter name stakeAmount.',
+      );
+    }
+    console.log(
+      `[MatchEngine] challenge called — myAgentToken=${myAgentToken}, opponentToken=${opponentToken}, stakeAmount=${stakeStr}, contract=${this.contractAddress}`,
+    );
+    try {
+      const { hash } = await walletClient.sendTransaction({
+        to: this.contractAddress,
+        abi: matchEngineAbi as unknown as Abi,
+        functionName: 'challenge',
+        args: [
+          myAgentToken,
+          opponentToken,
+          BigInt(stakeStr),
+        ],
+      });
+      console.log(`[MatchEngine] challenge tx sent — hash=${hash}`);
+      return `Challenge created. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[MatchEngine] challenge failed: ${msg}`);
+      return `Challenge failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -49,13 +76,24 @@ export class MatchEngineService {
     walletClient: EVMWalletClient,
     parameters: AcceptChallengeParams,
   ): Promise<string> {
-    const { hash } = await walletClient.sendTransaction({
-      to: this.contractAddress,
-      abi: matchEngineAbi as unknown as Abi,
-      functionName: 'acceptChallenge',
-      args: [parameters.matchId],
-    });
-    return `Challenge accepted. Transaction hash: ${hash}`;
+    const matchId = parameters.matchId ?? (parameters as any).match_id;
+    console.log(
+      `[MatchEngine] acceptChallenge called — matchId=${matchId}, contract=${this.contractAddress}`,
+    );
+    try {
+      const { hash } = await walletClient.sendTransaction({
+        to: this.contractAddress,
+        abi: matchEngineAbi as unknown as Abi,
+        functionName: 'acceptChallenge',
+        args: [matchId],
+      });
+      console.log(`[MatchEngine] acceptChallenge tx sent — hash=${hash}`);
+      return `Challenge accepted. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[MatchEngine] acceptChallenge failed: ${msg}`);
+      return `Accept challenge failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -65,13 +103,24 @@ export class MatchEngineService {
     walletClient: EVMWalletClient,
     parameters: DeclineChallengeParams,
   ): Promise<string> {
-    const { hash } = await walletClient.sendTransaction({
-      to: this.contractAddress,
-      abi: matchEngineAbi as unknown as Abi,
-      functionName: 'declineChallenge',
-      args: [parameters.matchId],
-    });
-    return `Challenge declined. Transaction hash: ${hash}`;
+    const matchId = parameters.matchId ?? (parameters as any).match_id;
+    console.log(
+      `[MatchEngine] declineChallenge called — matchId=${matchId}, contract=${this.contractAddress}`,
+    );
+    try {
+      const { hash } = await walletClient.sendTransaction({
+        to: this.contractAddress,
+        abi: matchEngineAbi as unknown as Abi,
+        functionName: 'declineChallenge',
+        args: [matchId],
+      });
+      console.log(`[MatchEngine] declineChallenge tx sent — hash=${hash}`);
+      return `Challenge declined. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[MatchEngine] declineChallenge failed: ${msg}`);
+      return `Decline challenge failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -82,17 +131,31 @@ export class MatchEngineService {
     walletClient: EVMWalletClient,
     parameters: SettleMatchParams,
   ): Promise<string> {
-    const { hash } = await walletClient.sendTransaction({
-      to: this.contractAddress,
-      abi: matchEngineAbi as unknown as Abi,
-      functionName: 'settleMatch',
-      args: [
-        parameters.matchId,
-        parameters.winnerToken,
-        parameters.signature,
-      ],
-    });
-    return `Match settled. Transaction hash: ${hash}`;
+    const raw = parameters as Record<string, unknown>;
+    const matchId = parameters.matchId ?? (raw.match_id as string);
+    const winnerToken = parameters.winnerToken ?? (raw.winner_token as string);
+    const signature = parameters.signature ?? (raw.signature as string);
+    console.log(
+      `[MatchEngine] settleMatch called — matchId=${matchId}, winnerToken=${winnerToken}, contract=${this.contractAddress}`,
+    );
+    try {
+      const { hash } = await walletClient.sendTransaction({
+        to: this.contractAddress,
+        abi: matchEngineAbi as unknown as Abi,
+        functionName: 'settleMatch',
+        args: [
+          matchId,
+          winnerToken,
+          signature,
+        ],
+      });
+      console.log(`[MatchEngine] settleMatch tx sent — hash=${hash}`);
+      return `Match settled. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[MatchEngine] settleMatch failed: ${msg}`);
+      return `Settle match failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -103,13 +166,25 @@ export class MatchEngineService {
     walletClient: EVMWalletClient,
     parameters: CancelMatchParams,
   ): Promise<string> {
-    const { hash } = await walletClient.sendTransaction({
-      to: this.contractAddress,
-      abi: matchEngineAbi as unknown as Abi,
-      functionName: 'cancelMatch',
-      args: [parameters.matchId, parameters.signature],
-    });
-    return `Match cancelled. Transaction hash: ${hash}`;
+    const matchId = parameters.matchId ?? (parameters as any).match_id;
+    const sig = parameters.signature ?? (parameters as any).signature;
+    console.log(
+      `[MatchEngine] cancelMatch called — matchId=${matchId}, contract=${this.contractAddress}`,
+    );
+    try {
+      const { hash } = await walletClient.sendTransaction({
+        to: this.contractAddress,
+        abi: matchEngineAbi as unknown as Abi,
+        functionName: 'cancelMatch',
+        args: [matchId, sig],
+      });
+      console.log(`[MatchEngine] cancelMatch tx sent — hash=${hash}`);
+      return `Match cancelled. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[MatchEngine] cancelMatch failed: ${msg}`);
+      return `Cancel match failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -120,13 +195,26 @@ export class MatchEngineService {
     walletClient: EVMWalletClient,
     parameters: CancelExpiredChallengeParams,
   ): Promise<string> {
-    const { hash } = await walletClient.sendTransaction({
-      to: this.contractAddress,
-      abi: matchEngineAbi as unknown as Abi,
-      functionName: 'cancelExpiredChallenge',
-      args: [parameters.matchId],
-    });
-    return `Expired challenge cancelled. Transaction hash: ${hash}`;
+    const matchId = parameters.matchId ?? (parameters as any).match_id;
+    console.log(
+      `[MatchEngine] cancelExpiredChallenge called — matchId=${matchId}, contract=${this.contractAddress}`,
+    );
+    try {
+      const { hash } = await walletClient.sendTransaction({
+        to: this.contractAddress,
+        abi: matchEngineAbi as unknown as Abi,
+        functionName: 'cancelExpiredChallenge',
+        args: [matchId],
+      });
+      console.log(
+        `[MatchEngine] cancelExpiredChallenge tx sent — hash=${hash}`,
+      );
+      return `Expired challenge cancelled. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[MatchEngine] cancelExpiredChallenge failed: ${msg}`);
+      return `Cancel expired challenge failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -137,15 +225,27 @@ export class MatchEngineService {
     walletClient: EVMWalletClient,
     parameters: GetMatchParams,
   ): Promise<string> {
-    const result = await walletClient.read({
-      address: this.contractAddress,
-      abi: matchEngineAbi as unknown as Abi,
-      functionName: 'getMatch',
-      args: [parameters.matchId],
-    });
-    const replacer = (_key: string, value: unknown): unknown =>
-      typeof value === 'bigint' ? value.toString() : value;
-    return JSON.stringify(result.value, replacer);
+    const matchId = parameters.matchId ?? (parameters as any).match_id;
+    console.log(
+      `[MatchEngine] getMatch called — matchId=${matchId}, contract=${this.contractAddress}`,
+    );
+    try {
+      const result = await walletClient.read({
+        address: this.contractAddress,
+        abi: matchEngineAbi as unknown as Abi,
+        functionName: 'getMatch',
+        args: [matchId],
+      });
+      const replacer = (_key: string, value: unknown): unknown =>
+        typeof value === 'bigint' ? value.toString() : value;
+      const json = JSON.stringify(result.value, replacer);
+      console.log(`[MatchEngine] getMatch result: ${json}`);
+      return json;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[MatchEngine] getMatch failed: ${msg}`);
+      return `Get match failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -156,12 +256,22 @@ export class MatchEngineService {
     parameters: EmptyParams,
   ): Promise<string> {
     void parameters;
-    const result = await walletClient.read({
-      address: this.contractAddress,
-      abi: matchEngineAbi as unknown as Abi,
-      functionName: 'getAllMatches',
-    });
-    const matches = result.value as string[];
-    return `All matches (${matches.length}): ${matches.join(', ')}`;
+    console.log(
+      `[MatchEngine] getAllMatches called — contract=${this.contractAddress}`,
+    );
+    try {
+      const result = await walletClient.read({
+        address: this.contractAddress,
+        abi: matchEngineAbi as unknown as Abi,
+        functionName: 'getAllMatches',
+      });
+      const matches = result.value as string[];
+      console.log(`[MatchEngine] getAllMatches result: ${matches.length} matches`);
+      return `All matches (${matches.length}): ${matches.join(', ')}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[MatchEngine] getAllMatches failed: ${msg}`);
+      return `Get all matches failed: ${msg}`;
+    }
   }
 }

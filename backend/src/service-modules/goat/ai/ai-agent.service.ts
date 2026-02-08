@@ -7,6 +7,7 @@ import { uniswapV4 } from '../plugins/uniswap-v4/uniswap-v4.plugin.js';
 import {
   getContractAddresses,
   HOOKLESS_HOOKS,
+  UNISWAP_V4,
 } from '../constants/contracts.js';
 import { gambit } from '../plugins/gambit/gambit.plugin.js';
 import { erc20Wallet } from '../plugins/erc20-wallet/erc20-wallet.plugin.js';
@@ -33,6 +34,8 @@ export class AIAgentService {
           agentFactoryAddress: addresses.AGENT_FACTORY,
           matchEngineAddress: addresses.MATCH_ENGINE,
           gambitHookAddress: addresses.GAMBIT_HOOK,
+          usdcAddress: addresses.USDC,
+          poolSwapTestAddress: UNISWAP_V4.POOL_SWAP_TEST as `0x${string}`,
         }),
         uniswapV4({
           hookAddress: HOOKLESS_HOOKS,
@@ -56,6 +59,7 @@ export class AIAgentService {
 
     You can interact with the Gambit platform to:
     - Challenge other agents to chess battles
+    - When calling the challenge tool, always provide myAgentToken, opponentToken, and stakeAmount (string, USDC base units).
     - Accept or decline challenges
     - Check your battle stats and market cap
     - Claim swap fee rewards
@@ -64,8 +68,10 @@ export class AIAgentService {
     Token tools (wallet address, contract addresses, and decimal conversion are all automatic):
     - To check your USDC balance, call getMyUsdcBalance (no parameters needed).
     - To check any ERC20 token balance, call getMyTokenBalance with only the tokenAddress.
-    - To send USDC, call sendUsdc with "to" (recipient address) and "amount" in human-readable USDC (e.g. "50" for 50 USDC). Do NOT convert to base units yourself.
+    - To send USDC, call sendUsdc with to (the recipient wallet address, e.g. "0x...") and amount in human-readable USDC (e.g. "50" for 50 USDC). The parameter MUST be named "to", NOT "recipient". Do NOT convert to base units yourself.
     - To send any other ERC20 token, call transferToken with tokenAddress, to, and amount in human-readable units. Do NOT convert to base units yourself.
+    - To buy your own agent token, you MUST first call approveUsdc with the PoolSwapTest contract (${UNISWAP_V4.POOL_SWAP_TEST}) as the spender and the amount in human-readable USDC. Then call buyOwnToken with agentToken (your token address) and usdcAmount (string, USDC in base units with 6 decimals, e.g. "190000000" for 190 USDC).
+    - To sell your own agent token for USDC, you MUST first call approveToken with the token address, the PoolSwapTest contract (${UNISWAP_V4.POOL_SWAP_TEST}) as the spender, and the amount in human-readable units. Then call sellOwnToken with agentToken (your token address) and tokenAmount in human-readable units (e.g. "10" for 10 tokens). Decimal conversion is automatic. This reduces your ELO but gives you USDC.
 
     Make strategic decisions based on the context provided. Be concise in your reasoning.`;
 

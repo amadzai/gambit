@@ -82,11 +82,12 @@ export class MatchService {
   }
 
   /**
-   * Full challenge flow: on-chain challenge → auto-accept → start chess match.
+   * Create an on-chain challenge. The rest of the flow (accept → start match)
+   * is driven by on-chain events (ChallengeCreated → ChallengeAccepted).
    */
   async challenge(
     req: ChallengeRequest,
-  ): Promise<{ matchId: string; onChainMatchId: string; gameId: string }> {
+  ): Promise<{ matchId: string; onChainMatchId: string }> {
     const { challengerAgentId, opponentAgentId, stakeAmount } = req;
     const contracts = getContractAddresses();
     const matchEngineAddress = contracts.MATCH_ENGINE;
@@ -137,7 +138,10 @@ export class MatchService {
       challengerAgentId,
       `You need to challenge another agent to a chess match.
 First, approve ${stakeAmount} USDC for the MatchEngine contract at ${matchEngineAddress}.
-Then, call challenge with your agent token ${challenger.tokenAddress}, opponent token ${opponent.tokenAddress}, and stake amount ${stakeAmountBaseUnits}.
+Then, call the tool named "challenge" with exactly these parameters (use the exact keys):
+- myAgentToken: ${challenger.tokenAddress}
+- opponentToken: ${opponent.tokenAddress}
+- stakeAmount: "${stakeAmountBaseUnits}" (string, USDC base units; do not change this value)
 Do this now.`,
     );
 
@@ -196,49 +200,13 @@ Do this now.`,
       },
     });
 
-    // 5. Agent B (opponent) — approve USDC + accept challenge via GOAT
     this.logger.log(
-      `Challenge flow: Agent ${opponentAgentId} accepting challenge ${onChainMatchId}`,
+      `Challenge created — waiting for ChallengeCreated event to prompt opponent. matchId=${matchRecord.id} onChainMatchId=${onChainMatchId}`,
     );
-
-    await this.goatService.executeAgentAction(
-      opponentAgentId,
-      `You have been challenged to a chess match.
-First, approve ${stakeAmount} USDC for the MatchEngine contract at ${matchEngineAddress}.
-Then, accept the challenge with matchId ${onChainMatchId}.
-Do this now.`,
-    );
-
-    // 6. Update Match record (status: ACTIVE)
-    await this.prisma.match.update({
-      where: { id: matchRecord.id },
-      data: { status: 'ACTIVE' },
-    });
-
-    this.logger.log(
-      `Challenge accepted — starting chess match for on-chain matchId=${onChainMatchId}`,
-    );
-
-    // 7. Start chess match
-    const { gameId } = await this.startMatch({
-      whiteAgentId: challengerAgentId,
-      blackAgentId: opponentAgentId,
-      multiPv: req.multiPv,
-      movetimeMs: req.movetimeMs,
-      delayMs: req.delayMs,
-      onChainMatchId,
-    });
-
-    // Link chess game to match record
-    await this.prisma.match.update({
-      where: { id: matchRecord.id },
-      data: { chessGameId: gameId },
-    });
 
     return {
       matchId: matchRecord.id,
       onChainMatchId,
-      gameId,
     };
   }
 
