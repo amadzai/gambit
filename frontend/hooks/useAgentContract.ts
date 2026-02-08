@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import { useReadContract, useWriteContract, useConfig } from 'wagmi';
 import { waitForTransactionReceipt } from 'wagmi/actions';
 import { parseUnits } from 'viem';
@@ -17,6 +17,7 @@ import {
   TOKEN_DECIMALS,
   MIN_SQRT_PRICE_LIMIT,
   MAX_SQRT_PRICE_LIMIT,
+  HOOKLESS_HOOKS,
 } from '@/lib/contracts/uniswap';
 
 // ---------------------------------------------------------------------------
@@ -66,10 +67,11 @@ export function useAgentContract(
   const tokenAddr = tokenAddress as `0x${string}` | undefined;
   const hasToken = !!tokenAddr && tokenAddr !== '0x';
 
+  // AgentFactory creates hookless pools; pool key must match (hooks = 0)
   const poolKey = useMemo(() => {
     if (!hasToken) return null;
-    return getPoolKey(tokenAddr!, addresses.usdc, addresses.gambitHook);
-  }, [hasToken, tokenAddr, addresses.usdc, addresses.gambitHook]);
+    return getPoolKey(tokenAddr!, addresses.usdc, HOOKLESS_HOOKS);
+  }, [hasToken, tokenAddr, addresses.usdc]);
 
   const poolId = useMemo(() => {
     if (!poolKey) return null;
@@ -101,6 +103,11 @@ export function useAgentContract(
     if (price == null) return null;
     return price * AGENT_TOKEN_TOTAL_SUPPLY;
   }, [price]);
+
+  // ── Debug: validate pool exists (remove when done) ─────────────────
+  useEffect(() => {
+    console.log('poolId:', poolId, 'slot0Data:', slot0Data);
+  }, [poolId, slot0Data]);
 
   // ── Read: user's agent-token balance ──────────────────────────────
   const {

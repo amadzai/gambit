@@ -6,6 +6,10 @@ export const TICK_SPACING = 60;
 export const TOKEN_DECIMALS = 6; // Both USDC and AgentToken are 6dp
 export const AGENT_TOKEN_TOTAL_SUPPLY = 1_000_000_000; // 1 billion tokens
 
+/** AgentFactory creates hookless pools; use this so poolId matches on-chain. */
+export const HOOKLESS_HOOKS =
+  '0x0000000000000000000000000000000000000000' as `0x${string}`;
+
 // ── Sqrt price limits for swap (from TickMath) ──────────────────────
 /** Minimum sqrt price for zeroForOne swaps (MIN_SQRT_PRICE + 1). */
 export const MIN_SQRT_PRICE_LIMIT = BigInt('4295128740') as bigint;

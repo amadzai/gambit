@@ -4,7 +4,10 @@ import { generateText, stepCountIs } from 'ai';
 import { getOnChainTools } from '@goat-sdk/adapter-vercel-ai';
 import { EVMWalletClient } from '@goat-sdk/wallet-evm';
 import { uniswapV4 } from '../plugins/uniswap-v4/uniswap-v4.plugin.js';
-import { getContractAddresses } from '../constants/contracts.js';
+import {
+  getContractAddresses,
+  HOOKLESS_HOOKS,
+} from '../constants/contracts.js';
 import { gambit } from '../plugins/gambit/gambit.plugin.js';
 import { erc20Wallet } from '../plugins/erc20-wallet/erc20-wallet.plugin.js';
 
@@ -32,7 +35,7 @@ export class AIAgentService {
           gambitHookAddress: addresses.GAMBIT_HOOK,
         }),
         uniswapV4({
-          hookAddress: addresses.GAMBIT_HOOK,
+          hookAddress: HOOKLESS_HOOKS,
         }),
         erc20Wallet({
           usdcAddress: addresses.USDC,
