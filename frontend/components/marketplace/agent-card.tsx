@@ -5,6 +5,13 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import type { MarketplaceAgent } from "@/types/marketplace";
 
+function formatMarketCap(value: number): string {
+  if (value >= 1_000_000_000) return (value / 1_000_000_000).toFixed(4) + 'B';
+  if (value >= 1_000_000) return (value / 1_000_000).toFixed(4) + 'M';
+  if (value >= 1_000) return (value / 1_000).toFixed(4) + 'K';
+  return value.toFixed(4);
+}
+
 /**
  * Props for the marketplace agent card. Expects MarketplaceAgent from @/types/marketplace.
  */
@@ -70,7 +77,7 @@ export function AgentCard({ agent }: AgentCardProps) {
               ${agent.price.toFixed(2)}
             </div>
             <div className="text-sm text-slate-400">
-              MCap: ${(agent.marketCap / 1000).toFixed(1)}K
+              MCap: ${formatMarketCap(agent.marketCap)}
             </div>
           </div>
           <div
