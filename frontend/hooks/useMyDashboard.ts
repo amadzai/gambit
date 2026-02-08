@@ -62,35 +62,38 @@ function seededRandom(seed: string): number {
   return ((hash >>> 0) % 10000) / 10000;
 }
 
+// Pre-set mock financials so the 4 positions total ≈ $200 value / ≈ $60 PnL.
+const MOCK_POSITIONS = [
+  { shares: 12.5, currentPrice: 4.2, avgPrice: 3.0 },
+  { shares: 8.3, currentPrice: 6.5, avgPrice: 4.8 },
+  { shares: 15.0, currentPrice: 3.2, avgPrice: 2.1 },
+  { shares: 10.2, currentPrice: 4.5, avgPrice: 3.0 },
+];
+
 /**
- * Build a PortfolioPosition from a backend Agent + Uniswap price.
- * Financial values (shares, avgPrice) are deterministic mocks.
+ * Build a PortfolioPosition from a backend Agent.
+ * Financial values are hardcoded mocks targeting ~$200 total / ~$60 PnL.
  */
 function buildPosition(
   agent: Agent,
   index: number,
-  price: number,
 ): PortfolioPosition {
-  const shares = +(seededRandom(agent.id + '_shares') * 20 + 5).toFixed(2);
-  const avgPrice = +(
-    price * (0.7 + seededRandom(agent.id + '_avg') * 0.5)
-  ).toFixed(2);
-  const currentPrice = price;
-  const value = +(shares * currentPrice).toFixed(2);
-  const pnl = +(shares * (currentPrice - avgPrice)).toFixed(2);
-  const pnlPercent =
-    avgPrice > 0
-      ? +(((currentPrice - avgPrice) / avgPrice) * 100).toFixed(1)
-      : 0;
+  const mock = MOCK_POSITIONS[index % MOCK_POSITIONS.length];
+  const value = +(mock.shares * mock.currentPrice).toFixed(2);
+  const pnl = +(mock.shares * (mock.currentPrice - mock.avgPrice)).toFixed(2);
+  const pnlPercent = +(
+    ((mock.currentPrice - mock.avgPrice) / mock.avgPrice) *
+    100
+  ).toFixed(1);
 
   return {
     agentId: agent.id,
     agentName: agent.name,
     avatar: AVATARS[index % AVATARS.length],
     profileImage: agent.profileImage,
-    shares,
-    avgPrice,
-    currentPrice,
+    shares: mock.shares,
+    avgPrice: mock.avgPrice,
+    currentPrice: mock.currentPrice,
     value,
     pnl,
     pnlPercent,
@@ -210,7 +213,7 @@ export function useMyDashboard(): UseMyDashboardResult {
       // 3. Build portfolio positions from the first 4 agents
       const positionAgents = agents.slice(0, 4);
       const builtPositions = positionAgents.map((agent, i) =>
-        buildPosition(agent, i, priceMap.get(agent.id) ?? 0),
+        buildPosition(agent, i),
       );
       setPositions(builtPositions);
 
