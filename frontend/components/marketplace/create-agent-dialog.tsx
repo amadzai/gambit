@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { X, Sparkles, ChevronDown } from 'lucide-react';
 import axios from 'axios';
-import { toast } from 'sonner';
+import { styledToast } from '@/components/ui/sonner';
 import { useWriteContract, usePublicClient } from 'wagmi';
 import { baseSepolia } from 'wagmi/chains';
 import type { AgentPlaystyle, Agent } from '@/types/agent';
@@ -88,7 +88,7 @@ export function CreateAgentDialog({
     if (!publicClient) {
       const msg = 'Wallet not connected. Please connect your wallet.';
       setError(msg);
-      toast.error(msg);
+      styledToast.error({ title: 'Wallet Error', description: msg });
       return;
     }
 
@@ -112,7 +112,7 @@ export function CreateAgentDialog({
         const msg =
           'Agent created but no wallet address assigned. Please contact support.';
         setError(msg);
-        toast.error(msg);
+        styledToast.error({ title: 'Wallet Missing', description: msg });
         setIsSubmitting(false);
         return;
       }
@@ -163,7 +163,7 @@ export function CreateAgentDialog({
       const updatedAgent = await apiService.agent.registerToken(agent.id, createHash);
 
       onCreated?.(updatedAgent);
-      toast.success('Agent created and deployed on-chain.');
+      styledToast.success({ title: 'Agent Deployed', description: 'Your agent has been created and deployed on-chain.' });
       resetForm();
       onClose();
     } catch (err: unknown) {
@@ -177,7 +177,7 @@ export function CreateAgentDialog({
         message = 'Failed to create agent. Please try again.';
       }
       setError(message);
-      toast.error(message);
+      styledToast.error({ title: 'Creation Failed', description: message });
     } finally {
       setIsSubmitting(false);
       setStatusText('');

@@ -75,7 +75,7 @@ export function LiveMatchCard({ match }: LiveMatchCardProps) {
               </div>
             </div>
           </div>
-          <div className="w-4 h-4 rounded-full bg-slate-900 border-2 border-white" />
+          <div className="w-4 h-4 rounded-full bg-black" />
         </div>
       </div>
 

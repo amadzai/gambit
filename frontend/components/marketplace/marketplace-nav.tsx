@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
-import { toast } from 'sonner';
+import { styledToast } from '@/components/ui/sonner';
 import { useConnection, useReadContract, useWriteContract } from 'wagmi';
 import { Plus, Droplets, LogOut, Loader2 } from 'lucide-react';
 import { CreateAgentDialog } from '@/components/marketplace/create-agent-dialog';
@@ -86,10 +86,10 @@ export function MarketplaceNav() {
         chainId: baseSepolia.id,
       });
       await refetchUsdc();
-      toast.success('USDC received.');
+      styledToast.success({ title: 'USDC Received', description: 'Successfully received USDC from faucet.' });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Faucet request failed.';
-      toast.error(message);
+      styledToast.error({ title: 'Faucet Failed', description: message });
     }
   };
 

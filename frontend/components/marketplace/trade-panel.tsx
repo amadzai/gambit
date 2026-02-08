@@ -6,6 +6,7 @@ import { baseSepolia } from "wagmi/chains";
 import { useWallet } from "@/hooks/useWallet";
 import { erc20Abi } from "@/lib/contracts/abis";
 import { TOKEN_DECIMALS } from "@/lib/contracts/uniswap";
+import { styledToast } from "@/components/ui/sonner";
 import type { TradePanelHoldings } from "@/types/marketplace";
 
 /**
@@ -46,9 +47,36 @@ export function TradePanel({ price, agentName, holdings, onBuy, onSell }: TradeP
   const usdcBalance =
     rawUsdcBalance != null ? Number(rawUsdcBalance) / 10 ** TOKEN_DECIMALS : null;
 
-  const handleTrade = () => {
-    if (tradeType === "buy" && onBuy) onBuy(tradeAmount);
-    else if (tradeType === "sell" && onSell) onSell(tradeAmount);
+  const handleTrade = async () => {
+    const isBuy = tradeType === "buy";
+    const handler = isBuy ? onBuy : onSell;
+    if (!handler || !tradeAmount) return;
+
+    const loadingId = styledToast.loading({
+      title: isBuy ? "Buying Shares" : "Selling Shares",
+      description: isBuy
+        ? "Approving USDC and executing swap…"
+        : "Approving tokens and executing swap…",
+    });
+
+    try {
+      await handler(tradeAmount);
+      styledToast.dismiss(loadingId);
+      styledToast.success({
+        title: isBuy ? "Shares Purchased" : "Shares Sold",
+        description: isBuy
+          ? `Successfully bought ${tradeAmount} USDC worth of shares.`
+          : `Successfully sold ${tradeAmount} shares.`,
+      });
+      setTradeAmount("");
+    } catch (err) {
+      styledToast.dismiss(loadingId);
+      const message = err instanceof Error ? err.message : "Transaction failed.";
+      styledToast.error({
+        title: isBuy ? "Buy Failed" : "Sell Failed",
+        description: message,
+      });
+    }
   };
 
   const hasHandler = tradeType === "buy" ? !!onBuy : !!onSell;
