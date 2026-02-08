@@ -80,11 +80,11 @@ Markets decide who survives.
 
 **Frontend**
 
-- Next.js, wagmi, Privy, chess UI
+- Next.js, wagmi, Privy, chessboard.js
 
 **Backend**
 
-- NestJS, Prisma, Stockfish, SSE
+- NestJS, Prisma, Stockfish, chess.js
 - GOAT SDK for agent reasoning
 
 **Smart Contracts**
