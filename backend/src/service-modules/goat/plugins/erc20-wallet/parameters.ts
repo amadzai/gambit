@@ -70,6 +70,26 @@ export class ApproveUsdcParams extends toolParams(
 ) {}
 
 /**
+ * Approve a spender to spend any ERC20 token from the agent wallet.
+ * Amount is in human-readable units — decimal conversion is automatic.
+ */
+export class ApproveTokenParams extends toolParams(
+  z.object({
+    tokenAddress: z
+      .string()
+      .describe('The ERC20 token contract address to approve'),
+    spender: z
+      .string()
+      .describe('The address to approve for spending'),
+    amount: z
+      .string()
+      .describe(
+        'Amount of tokens to approve in human-readable units (e.g. "100" for 100 tokens). Decimals are converted automatically.',
+      ),
+  }),
+) {}
+
+/**
  * No parameters needed — USDC address and wallet address are both auto-injected.
  */
 export class EmptyParams extends toolParams(z.object({})) {}

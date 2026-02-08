@@ -3,6 +3,7 @@ import { EVMWalletClient } from '@goat-sdk/wallet-evm';
 import { parseAbi, parseUnits } from 'viem';
 import {
   ApproveUsdcParams,
+  ApproveTokenParams,
   GetMyTokenBalanceParams,
   SendUsdcParams,
   TransferTokenParams,
@@ -209,6 +210,45 @@ export class Erc20WalletService {
       const msg = error instanceof Error ? error.message : String(error);
       console.error(`[ERC20Wallet] approveUsdc failed: ${msg}`);
       return `Approve USDC failed: ${msg}`;
+    }
+  }
+
+  @Tool({
+    description:
+      'Approve a spender to spend any ERC20 token from the agent wallet. Provide the token address, spender address, and amount in human-readable units (e.g. "100" for 100 tokens). Decimal conversion is handled automatically.',
+  })
+  async approveToken(
+    walletClient: EVMWalletClient,
+    parameters: ApproveTokenParams,
+  ): Promise<string> {
+    const tokenAddr = String(parameters.tokenAddress ?? (parameters as any).token_address) as `0x${string}`;
+    const amount = String(parameters.amount);
+    const spender = String(parameters.spender);
+    console.log(
+      `[ERC20Wallet] approveToken called — token=${tokenAddr}, spender=${spender}, amount=${amount}`,
+    );
+
+    try {
+      const rawDecimals = await walletClient.read({
+        address: tokenAddr,
+        abi: erc20Abi,
+        functionName: 'decimals',
+      });
+      const decimals = Number(rawDecimals.value);
+      const baseUnits = parseUnits(amount, decimals);
+
+      const { hash } = await walletClient.sendTransaction({
+        to: tokenAddr,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [spender, baseUnits],
+      });
+      console.log(`[ERC20Wallet] approveToken tx sent — hash=${hash}`);
+      return `Approved ${amount} tokens (${tokenAddr}) for ${spender}. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[ERC20Wallet] approveToken failed: ${msg}`);
+      return `Approve token failed: ${msg}`;
     }
   }
 }

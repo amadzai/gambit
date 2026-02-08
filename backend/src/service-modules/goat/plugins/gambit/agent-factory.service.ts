@@ -7,10 +7,32 @@ import {
   GetMarketCapParams,
   GetAgentInfoParams,
   BuyOwnTokenParams,
+  SellOwnTokenParams,
   EmptyParams,
 } from './parameters.js';
 import { Abi } from 'viem';
 import { HOOKLESS_HOOKS } from '../../constants/contracts.js';
+
+/** Minimal ERC20 ABI for approve + decimals. */
+const erc20MinimalAbi = [
+  {
+    type: 'function',
+    name: 'approve',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'decimals',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+] as const;
 
 /** Pool configuration constants (must match AgentFactory.sol / frontend). */
 const POOL_FEE = 3000;
@@ -229,6 +251,90 @@ export class AgentFactoryService {
       const msg = error instanceof Error ? error.message : String(error);
       console.error(`[AgentFactory] buyOwnToken failed: ${msg}`);
       return `Buy own token failed: ${msg}`;
+    }
+  }
+
+  @Tool({
+    description:
+      'Sell own agent token for USDC via Uniswap V4 swap. This reduces market cap and ELO but gives USDC. The agent token must be approved for the PoolSwapTest contract BEFORE calling this (use approveToken).',
+  })
+  async sellOwnToken(
+    walletClient: EVMWalletClient,
+    parameters: SellOwnTokenParams,
+  ): Promise<string> {
+    const agentToken =
+      parameters.agentToken ?? (parameters as any).agent_token;
+    const tokenAmount =
+      parameters.tokenAmount ?? (parameters as any).token_amount;
+
+    console.log(
+      `[AgentFactory] sellOwnToken called — agentToken=${agentToken}, tokenAmount=${tokenAmount}, poolSwapTest=${this.poolSwapTestAddress}`,
+    );
+
+    try {
+      // Read token decimals from the contract to convert human-readable amount
+      const rawDecimals = await walletClient.read({
+        address: agentToken as `0x${string}`,
+        abi: erc20MinimalAbi as Abi,
+        functionName: 'decimals',
+      });
+      const decimals = Number(rawDecimals.value);
+      // Convert human-readable to base units (e.g. "10" with 18 decimals → 10000000000000000000)
+      const parts = String(tokenAmount).split('.');
+      const whole = BigInt(parts[0] || '0') * BigInt(10) ** BigInt(decimals);
+      let frac = BigInt(0);
+      if (parts[1]) {
+        const fracStr = parts[1].slice(0, decimals).padEnd(decimals, '0');
+        frac = BigInt(fracStr);
+      }
+      const rawAmount = whole + frac;
+
+      console.log(
+        `[AgentFactory] sellOwnToken — decimals=${decimals}, rawAmount=${rawAmount}`,
+      );
+
+      // Swap AgentToken → USDC
+      const usdcLower = this.usdcAddress.toLowerCase();
+      const tokenLower = (agentToken as string).toLowerCase();
+      const [currency0, currency1] =
+        usdcLower < tokenLower
+          ? [this.usdcAddress, agentToken as `0x${string}`]
+          : [agentToken as `0x${string}`, this.usdcAddress];
+
+      // Selling = AgentToken → USDC (opposite direction of buyOwnToken)
+      // If USDC is currency0: selling token (currency1) means oneForZero → zeroForOne = false
+      // If USDC is currency1: selling token (currency0) means zeroForOne → zeroForOne = true
+      const zeroForOne = usdcLower > tokenLower;
+
+      const { hash } = await walletClient.sendTransaction({
+        to: this.poolSwapTestAddress,
+        abi: poolSwapTestAbi as Abi,
+        functionName: 'swap',
+        args: [
+          {
+            currency0,
+            currency1,
+            fee: POOL_FEE,
+            tickSpacing: TICK_SPACING,
+            hooks: HOOKLESS_HOOKS,
+          },
+          {
+            zeroForOne,
+            amountSpecified: -rawAmount,
+            sqrtPriceLimitX96: zeroForOne
+              ? MIN_SQRT_PRICE_LIMIT
+              : MAX_SQRT_PRICE_LIMIT,
+          },
+          { takeClaims: false, settleUsingBurn: false },
+          '0x',
+        ],
+      });
+      console.log(`[AgentFactory] sellOwnToken swap tx sent — hash=${hash}`);
+      return `Token sold via Uniswap V4 swap. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[AgentFactory] sellOwnToken failed: ${msg}`);
+      return `Sell own token failed: ${msg}`;
     }
   }
 }

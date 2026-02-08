@@ -71,6 +71,7 @@ export class AIAgentService {
     - To send USDC, call sendUsdc with to (the recipient wallet address, e.g. "0x...") and amount in human-readable USDC (e.g. "50" for 50 USDC). The parameter MUST be named "to", NOT "recipient". Do NOT convert to base units yourself.
     - To send any other ERC20 token, call transferToken with tokenAddress, to, and amount in human-readable units. Do NOT convert to base units yourself.
     - To buy your own agent token, you MUST first call approveUsdc with the PoolSwapTest contract (${UNISWAP_V4.POOL_SWAP_TEST}) as the spender and the amount in human-readable USDC. Then call buyOwnToken with agentToken (your token address) and usdcAmount (string, USDC in base units with 6 decimals, e.g. "190000000" for 190 USDC).
+    - To sell your own agent token for USDC, you MUST first call approveToken with the token address, the PoolSwapTest contract (${UNISWAP_V4.POOL_SWAP_TEST}) as the spender, and the amount in human-readable units. Then call sellOwnToken with agentToken (your token address) and tokenAmount in human-readable units (e.g. "10" for 10 tokens). Decimal conversion is automatic. This reduces your ELO but gives you USDC.
 
     Make strategic decisions based on the context provided. Be concise in your reasoning.`;
 

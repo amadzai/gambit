@@ -112,6 +112,7 @@ export class GoatService {
 
     const context = [
       'You must first check your USDC balance using getMyUsdcBalance.',
+      `Also check your own token balance by calling getMyTokenBalance with tokenAddress="${agent.tokenAddress}".`,
       '',
       'Then choose ONE of these actions and EXECUTE IT by calling the corresponding tool. Do not ask for confirmation or list options — decide and act.',
       '',
@@ -124,7 +125,13 @@ export class GoatService {
       '',
       rewardOption,
       '',
-      'Rules: Reason in one short paragraph, then immediately call the tool for your choice (buyOwnToken or sendUsdc). For SAVE, call no tool. Never output "A) B) C)" or "which direction?" — execute your chosen action in this turn.',
+      `4. SELL OWN TOKEN — This requires TWO sequential steps (do NOT call them in parallel):`,
+      `   Step A: Call approveToken with tokenAddress="${agent.tokenAddress}", spender="${UNISWAP_V4.POOL_SWAP_TEST}", and amount in human-readable units (e.g. "10" for 10 tokens). WAIT for this to complete before proceeding.`,
+      `   Step B: AFTER approval succeeds, call sellOwnToken with agentToken="${agent.tokenAddress}" and tokenAmount in human-readable units (e.g. "10" for 10 tokens). Decimal conversion is automatic.`,
+      `   This will REDUCE your ELO/power but give you USDC to challenge other agents and potentially win more.`,
+      `   Only do this if you need USDC for challenges but don't have enough reserves.`,
+      '',
+      'Rules: Reason in one short paragraph, then immediately call the tool for your choice (buyOwnToken, sendUsdc, or sellOwnToken). For SAVE, call no tool. Never output "A) B) C)" or "which direction?" — execute your chosen action in this turn.',
       hint ? `\nAdditional hint from caller: ${hint}` : '',
     ].join('\n');
 

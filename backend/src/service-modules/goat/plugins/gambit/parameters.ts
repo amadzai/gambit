@@ -46,6 +46,17 @@ export class BuyOwnTokenParams extends toolParams(
   }),
 ) {}
 
+export class SellOwnTokenParams extends toolParams(
+  z.object({
+    agentToken: z
+      .string()
+      .describe('The agent token address to sell'),
+    tokenAmount: z
+      .string()
+      .describe('Amount of agent tokens to sell in human-readable units (e.g. "10" for 10 tokens). The token must be approved for the PoolSwapTest contract first.'),
+  }),
+) {}
+
 // ── MatchEngine ───────────────────────────────────────────────────
 export class ChallengeParams extends toolParams(
   z.object({
