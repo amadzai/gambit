@@ -86,9 +86,13 @@ export function MarketplaceNav() {
         chainId: baseSepolia.id,
       });
       await refetchUsdc();
-      styledToast.success({ title: 'USDC Received', description: 'Successfully received USDC from faucet.' });
+      styledToast.success({
+        title: 'USDC Received',
+        description: 'Successfully received USDC from faucet.',
+      });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Faucet request failed.';
+      const message =
+        err instanceof Error ? err.message : 'Faucet request failed.';
       styledToast.error({ title: 'Faucet Failed', description: message });
     }
   };
@@ -101,15 +105,26 @@ export function MarketplaceNav() {
   return (
     <>
       <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center">
+        <div className="max-w-7xl mx-auto px-6 py-5">
+          <div className="relative flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setCreateModalOpen(true)}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25"
+            >
+              <Plus className="w-4 h-4" />
+              Create Agent
+            </button>
+            <Link
+              href="/"
+              className="absolute left-1/2 -translate-x-1/2 flex items-center"
+            >
               <Image
                 src="/gambitWhite.png"
                 alt="gambAIt"
                 width={140}
                 height={50}
-                className="h-12 w-auto"
+                className="h-13 w-auto"
                 priority
               />
             </Link>
@@ -127,14 +142,6 @@ export function MarketplaceNav() {
                   {link.label}
                 </Link>
               ))}
-              <button
-                type="button"
-                onClick={() => setCreateModalOpen(true)}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2.5 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25"
-              >
-                <Plus className="w-4 h-4" />
-                Create Agent
-              </button>
               {authenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
