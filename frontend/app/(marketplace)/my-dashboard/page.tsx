@@ -1,26 +1,46 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Wallet, BarChart3, Users, Settings } from 'lucide-react';
-import { MarketplaceNav } from '@/components/marketplace/marketplace-nav';
-import { PortfolioChart } from '@/components/marketplace/portfolio-chart';
-import { PositionsTable } from '@/components/marketplace/positions-table';
-import { MyAgentsGrid } from '@/components/marketplace/my-agents-grid';
-import {
-  mockPortfolio,
-  mockPortfolioHistory,
-  mockMyAgents,
-} from '@/lib/marketplace-mock-data';
+import { useState } from "react";
+import { Wallet, BarChart3, Users, Settings } from "lucide-react";
+import { MarketplaceNav } from "@/components/marketplace/marketplace-nav";
+import { PortfolioChart } from "@/components/marketplace/portfolio-chart";
+import { PositionsTable } from "@/components/marketplace/positions-table";
+import { MyAgentsGrid } from "@/components/marketplace/my-agents-grid";
+import { useMyDashboard } from "@/hooks";
+import { mockPortfolioHistory } from "@/lib/marketplace-mock-data";
 
 export default function MyDashboardPage() {
-  const [activeTab, setActiveTab] = useState<'portfolio' | 'agents'>(
-    'portfolio',
+  const [activeTab, setActiveTab] = useState<"portfolio" | "agents">(
+    "portfolio"
   );
 
-  const totalValue = mockPortfolio.reduce((sum, p) => sum + p.value, 0);
-  const totalPnL = mockPortfolio.reduce((sum, p) => sum + p.pnl, 0);
-  const totalChangePercent =
-    totalPnL > 0 ? (totalPnL / (totalValue - totalPnL)) * 100 : 0;
+  const { positions, myAgents, isLoading, error } = useMyDashboard();
+
+  const totalValue = positions.reduce((sum, p) => sum + p.value, 0);
+  const totalPnL = positions.reduce((sum, p) => sum + p.pnl, 0);
+  const totalChangePercent = totalPnL > 0 ? ((totalPnL / (totalValue - totalPnL)) * 100) : 0;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <MarketplaceNav />
+        <div className="flex items-center justify-center h-[60vh] text-slate-400">
+          Loading dashboard...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <MarketplaceNav />
+        <div className="flex items-center justify-center h-[60vh] text-red-400">
+          {error.message}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -35,10 +55,10 @@ export default function MyDashboardPage() {
                 <Wallet className="w-5 h-5 text-slate-400" />
                 <span
                   className={`text-sm ${
-                    totalChangePercent >= 0 ? 'text-green-400' : 'text-red-400'
+                    totalChangePercent >= 0 ? "text-green-400" : "text-red-400"
                   }`}
                 >
-                  {totalChangePercent >= 0 ? '+' : ''}
+                  {totalChangePercent >= 0 ? "+" : ""}
                   {totalChangePercent.toFixed(2)}%
                 </span>
               </div>
@@ -55,15 +75,15 @@ export default function MyDashboardPage() {
                 <BarChart3 className="w-5 h-5 text-slate-400" />
                 <span
                   className={`text-sm ${
-                    totalPnL >= 0 ? 'text-green-400' : 'text-red-400'
+                    totalPnL >= 0 ? "text-green-400" : "text-red-400"
                   }`}
                 >
-                  {totalPnL >= 0 ? '+' : ''}${totalPnL.toFixed(2)}
+                  {totalPnL >= 0 ? "+" : ""}${totalPnL.toFixed(2)}
                 </span>
               </div>
               <div
                 className={`text-3xl font-bold ${
-                  totalPnL >= 0 ? 'text-green-400' : 'text-red-400'
+                  totalPnL >= 0 ? "text-green-400" : "text-red-400"
                 }`}
               >
                 ${totalPnL.toFixed(2)}
@@ -76,7 +96,7 @@ export default function MyDashboardPage() {
                 <Users className="w-5 h-5 text-slate-400" />
               </div>
               <div className="text-3xl font-bold text-white mb-1">
-                {mockPortfolio.length}
+                {positions.length}
               </div>
               <div className="text-sm text-slate-400">Active Positions</div>
             </div>
@@ -86,7 +106,7 @@ export default function MyDashboardPage() {
                 <Settings className="w-5 h-5 text-slate-400" />
               </div>
               <div className="text-3xl font-bold text-white mb-1">
-                {mockMyAgents.length}
+                {myAgents.length}
               </div>
               <div className="text-sm text-slate-400">Created Agents</div>
             </div>
@@ -101,21 +121,21 @@ export default function MyDashboardPage() {
         {/* Tabs */}
         <div className="flex gap-4 mb-6">
           <button
-            onClick={() => setActiveTab('portfolio')}
+            onClick={() => setActiveTab("portfolio")}
             className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-              activeTab === 'portfolio'
-                ? 'bg-violet-600 text-white'
-                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800'
+              activeTab === "portfolio"
+                ? "bg-violet-600 text-white"
+                : "bg-slate-800/50 text-slate-400 hover:bg-slate-800"
             }`}
           >
             Token Positions
           </button>
           <button
-            onClick={() => setActiveTab('agents')}
+            onClick={() => setActiveTab("agents")}
             className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-              activeTab === 'agents'
-                ? 'bg-violet-600 text-white'
-                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800'
+              activeTab === "agents"
+                ? "bg-violet-600 text-white"
+                : "bg-slate-800/50 text-slate-400 hover:bg-slate-800"
             }`}
           >
             My Agents
@@ -123,10 +143,10 @@ export default function MyDashboardPage() {
         </div>
 
         {/* Content */}
-        {activeTab === 'portfolio' ? (
-          <PositionsTable positions={mockPortfolio} />
+        {activeTab === "portfolio" ? (
+          <PositionsTable positions={positions} />
         ) : (
-          <MyAgentsGrid agents={mockMyAgents} />
+          <MyAgentsGrid agents={myAgents} />
         )}
       </div>
     </div>
