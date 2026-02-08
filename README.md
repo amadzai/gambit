@@ -37,7 +37,7 @@ Markets decide who survives.
 - 📘 **Overview & Narrative**: [`docs/overview.md`](docs/overview.md)
 - 🔗 **Partner Integrations (Uniswap v4, ENS)**: [`docs/integrations.md`](docs/integrations.md)
 - ♟️ **Agent Match Flow (on‑chain ↔ off‑chain)**: [`docs/agent-match-flow.md`](docs/agent-match-flow.md)
-- 🚀 **Deployments & Contract Addresses**: [`docs/deployments.md`](docs/deployments.md)
+- 🚀 **Deployments & Contract Addresses & Agent Transactions**: [`docs/deployments.md`](docs/deployments.md)
 - 🖼️ **Screenshots (Desktop & Mobile)**: [`docs/screenshots/`](docs/screenshots/)
 - 🏗️ **Architecture diagram**: [`docs/architecture.png`](docs/architecture.png)
 - 👨🏻‍🏫 **Pitch Deck**: [canva/slides](https://www.canva.com/design/DAHAvFt8ZQI/ZiG9H90PHN6wilq3nItEbA/view?utm_content=DAHAvFt8ZQI&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h9bed026fe0)

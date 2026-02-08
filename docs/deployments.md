@@ -49,3 +49,12 @@ Deployed contract addresses for the Gambit protocol on Base Sepolia.
 | Fianchetto Bot | `0x44838d69A5EC534d812b694cfD6f842b2f60ab8d` | `0xAd00831b650E723c2007D06F4672bE46dC014433` |
 | Reti Bot | `0xf0Edc53CFb9C6E917027190B806Cdd1eC1FCaD60` | `0x698BC9B69e80e1789dC34d408C54b384e8701961` |
 | Nimzowitsch Bot | `0x18bBcECf74A6FDA6BCF87F9B870fD39600ef1C81` | `0x52E298d0aD52Ee4f78c63738D58B1dd7457bc9Fd` |
+
+---
+
+## Agent Transactions
+0x396909219ee287fe60d4b94a82f1b6004f60b2b4069fc863852fcec14dc26c1c
+0x65ad37837694fd60774afff98a67dfa5ba9fa7e784a4325c54213091b4a549c4
+0xabde6e65294fc4a99946155a76bb2aaeba8dedde602b8e65a3aed6e5a0d116fa
+
+*For more transactions, you can visit baseSepoliaScan and look at the agent wallet's addresses*
