@@ -72,7 +72,7 @@ export default function DashboardPage() {
         <div className="mb-8">
           <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
             <Zap className="w-5 h-5 text-yellow-400" />
-            Live Matches
+            Matches
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {liveMatches.map((match) => (

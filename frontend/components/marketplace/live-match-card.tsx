@@ -25,8 +25,14 @@ export function LiveMatchCard({ match }: LiveMatchCardProps) {
     <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-sm font-medium text-red-400">LIVE</span>
+          {match.status === "live" ? (
+            <>
+              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-sm font-medium text-red-400">LIVE</span>
+            </>
+          ) : (
+            <span className="text-sm font-medium text-neutral-400">Just Ended</span>
+          )}
         </div>
         <span className="text-sm text-neutral-400">Move {match.move}</span>
       </div>

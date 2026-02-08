@@ -189,7 +189,7 @@ function buildLiveMatch(
     },
     position: game.fen,
     move: countMovesFromPgn(game.pgn),
-    status: 'live', // Always show as "live" per requirements
+    status: game.status === 'ACTIVE' ? 'live' : 'completed',
   };
 }
 
