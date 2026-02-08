@@ -44,6 +44,27 @@ export class AgentResponseDto {
   @ApiProperty({ example: 1000 })
   elo: number;
 
+  @ApiPropertyOptional({ description: 'Number of games won', example: 5 })
+  wins?: number;
+
+  @ApiPropertyOptional({ description: 'Number of games lost', example: 3 })
+  losses?: number;
+
+  @ApiPropertyOptional({ description: 'Number of games drawn', example: 1 })
+  draws?: number;
+
+  @ApiPropertyOptional({
+    description: 'Total completed games',
+    example: 9,
+  })
+  totalGames?: number;
+
+  @ApiPropertyOptional({
+    description: 'Win rate as a percentage (0–100)',
+    example: 55.56,
+  })
+  winRate?: number;
+
   @ApiProperty()
   createdAt: Date;
 

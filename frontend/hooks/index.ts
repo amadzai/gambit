@@ -7,3 +7,12 @@ export {
   useMatchGame,
   type UseMatchGameResult,
 } from "./useMatchGame";
+export {
+  useAgent,
+  type UseAgentResult,
+  type AgentRecentMatch,
+} from "./useAgent";
+export {
+  useAgentContract,
+  type UseAgentContractResult,
+} from "./useAgentContract";

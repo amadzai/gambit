@@ -4,6 +4,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -15,6 +17,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { decodeEventLog } from 'viem';
 import { WalletManagerService } from '../../service-modules/goat/wallet/wallet-manager.service.js';
 import { AgentService } from '../../service-modules/agent-service/providers/agent-chess.service.js';
 import { AgentCrudService } from '../../service-modules/agent-service/providers/agent-crud.service.js';
@@ -22,6 +25,7 @@ import {
   AgentMoveDto,
   CreateAgentDto,
   ExecuteAgentActionDto,
+  RegisterTokenDto,
   UpdateAgentDto,
 } from './dto/agent.dto.js';
 import {
@@ -30,10 +34,13 @@ import {
   ExecuteAgentActionResponseDto,
 } from './dto/agent.response.dto.js';
 import { GoatService } from '../../service-modules/goat/goat.service.js';
+import { agentFactoryAbi } from '../../service-modules/goat/plugins/gambit/abis/agent-factory.abi.js';
 
 @ApiTags('Agent')
 @Controller('agent')
 export class AgentController {
+  private readonly logger = new Logger(AgentController.name);
+
   constructor(
     private readonly agentCrudService: AgentCrudService,
     private readonly agentService: AgentService,
@@ -146,6 +153,70 @@ export class AgentController {
       multiPv: dto.multiPv,
       movetimeMs: dto.movetimeMs,
     });
+  }
+
+  @Post(':id/register-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Register an on-chain token for an agent by providing the AgentFactory tx hash',
+  })
+  @ApiParam({ name: 'id', description: 'Agent ID' })
+  @ApiBody({ type: RegisterTokenDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Token address extracted and stored successfully',
+    type: AgentResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Agent not found or event not found in tx' })
+  async registerToken(
+    @Param('id') id: string,
+    @Body() dto: RegisterTokenDto,
+  ): Promise<AgentResponseDto> {
+    // Ensure the agent exists
+    await this.agentCrudService.get({ id });
+
+    const publicClient = this.walletManager.getPublicClient();
+    const receipt = await publicClient.getTransactionReceipt({
+      hash: dto.txHash as `0x${string}`,
+    });
+
+    // Find the AgentCreated event in the logs
+    let tokenAddress: string | undefined;
+    for (const log of receipt.logs) {
+      try {
+        const decoded = decodeEventLog({
+          abi: agentFactoryAbi,
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decoded.eventName === 'AgentCreated') {
+          tokenAddress = (decoded.args as { tokenAddress: string }).tokenAddress;
+          break;
+        }
+      } catch {
+        // Not an AgentCreated event from this ABI, skip
+      }
+    }
+
+    if (!tokenAddress) {
+      throw new NotFoundException(
+        'AgentCreated event not found in the transaction receipt',
+      );
+    }
+
+    this.logger.log(
+      `Registering token ${tokenAddress} for agent ${id} from tx ${dto.txHash}`,
+    );
+
+    const agent = await this.agentCrudService.update({
+      where: { id },
+      data: { tokenAddress },
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { encryptedPrivateKey: _, ...response } = agent;
+    return response as AgentResponseDto;
   }
 
   @Post(':id/action')

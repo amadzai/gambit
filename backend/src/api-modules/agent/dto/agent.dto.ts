@@ -1,6 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  Min,
+} from 'class-validator';
 import { Playstyle } from '../../../../generated/prisma/client.js';
 
 export class CreateAgentDto {
@@ -188,4 +196,18 @@ export class ExecuteAgentActionDto {
   @IsOptional()
   @IsString()
   systemPrompt?: string;
+}
+
+export class RegisterTokenDto {
+  @ApiProperty({
+    description:
+      'Transaction hash from the AgentFactory.createAgent() call on-chain',
+    example:
+      '0xabc123def456789012345678901234567890123456789012345678901234abcd',
+  })
+  @IsString()
+  @Matches(/^0x[a-fA-F0-9]{64}$/, {
+    message: 'txHash must be a valid 0x-prefixed 32-byte hex string',
+  })
+  txHash: string;
 }

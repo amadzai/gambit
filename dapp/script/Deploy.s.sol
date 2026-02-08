@@ -38,7 +38,7 @@ contract Deploy is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address resultSigner = vm.addr(deployerPrivateKey);
         address treasury = vm.addr(deployerPrivateKey);
-        uint256 creationFee = vm.envOr("CREATION_FEE", uint256(100e6));
+        uint256 creationFee = vm.envOr("CREATION_FEE", uint256(1000e6));
 
         vm.startBroadcast(deployerPrivateKey);
 

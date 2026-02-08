@@ -57,6 +57,11 @@ export interface Agent {
   walletAddress?: string | null;
   tokenAddress?: string | null;
   elo: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  totalGames: number;
+  winRate: number;
   createdAt: string;
   updatedAt: string;
 }

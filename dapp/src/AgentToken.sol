@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  */
 contract AgentToken is ERC20 {
     /// @notice Fixed supply of 1 billion tokens
-    uint256 public constant TOTAL_SUPPLY = 1_000_000_000 * 10**18;
+    uint256 public constant TOTAL_SUPPLY = 1_000_000_000 * 10**6;
 
     /**
      * @notice Deploy a new agent token
@@ -25,5 +25,10 @@ contract AgentToken is ERC20 {
     ) ERC20(name, symbol) {
         require(factory != address(0), "Invalid factory address");
         _mint(factory, TOTAL_SUPPLY);
+    }
+
+
+    function decimals() public pure override returns (uint8) {
+        return 6;
     }
 }
