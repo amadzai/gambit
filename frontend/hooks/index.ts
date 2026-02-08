@@ -16,3 +16,7 @@ export {
   useAgentContract,
   type UseAgentContractResult,
 } from "./useAgentContract";
+export {
+  useDashboard,
+  type UseDashboardResult,
+} from "./useDashboard";

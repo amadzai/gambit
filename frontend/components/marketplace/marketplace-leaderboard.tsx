@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Trophy, TrendingUp } from "lucide-react";
 import type { MarketplaceAgent } from "@/types/marketplace";
 
@@ -15,7 +16,13 @@ export interface MarketplaceLeaderboardProps {
 export function MarketplaceLeaderboard({
   agents,
 }: MarketplaceLeaderboardProps) {
-  const sortedAgents = [...agents].sort((a, b) => b.elo - a.elo);
+  const sortedAgents = [...agents].sort((a, b) => {
+    const totalA = a.wins + a.losses + a.draws;
+    const totalB = b.wins + b.losses + b.draws;
+    const wrA = totalA > 0 ? a.wins / totalA : 0;
+    const wrB = totalB > 0 ? b.wins / totalB : 0;
+    return wrB - wrA;
+  });
 
   const getRankColor = (rank: number) => {
     if (rank === 0) return "text-yellow-400";
@@ -52,11 +59,11 @@ export function MarketplaceLeaderboard({
           </thead>
           <tbody>
             {sortedAgents.map((agent, index) => {
-              const winRate = (
-                (agent.wins / (agent.wins + agent.losses + agent.draws)) *
-                100
-              ).toFixed(1);
-              const totalMatches = agent.wins + agent.losses + agent.draws;
+              const totalGames = agent.wins + agent.losses + agent.draws;
+              const winRate = totalGames > 0
+                ? ((agent.wins / totalGames) * 100).toFixed(1)
+                : null;
+              const totalMatches = totalGames;
 
               return (
                 <tr
@@ -78,15 +85,22 @@ export function MarketplaceLeaderboard({
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
-                        style={{
-                          background: `${agent.color}20`,
-                          border: `2px solid ${agent.color}`,
-                        }}
-                      >
-                        {agent.avatar}
-                      </div>
+                      {agent.profileImage ? (
+                        <Image
+                          src={agent.profileImage}
+                          alt={agent.name}
+                          width={40}
+                          height={40}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
+                          style={{ background: `${agent.color}20` }}
+                        >
+                          {agent.avatar}
+                        </div>
+                      )}
                       <span className="font-medium text-white">
                         {agent.name}
                       </span>
@@ -99,7 +113,7 @@ export function MarketplaceLeaderboard({
                     <div className="flex items-center justify-end gap-1">
                       <TrendingUp className="w-4 h-4 text-green-400" />
                       <span className="text-white font-medium">
-                        {winRate}%
+                        {winRate !== null ? `${winRate}%` : '—'}
                       </span>
                     </div>
                   </td>

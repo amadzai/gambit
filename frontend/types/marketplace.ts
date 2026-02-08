@@ -2,6 +2,7 @@ import { ChessAgent } from "./agent";
 
 export interface MarketplaceAgent extends ChessAgent {
   avatar: string;
+  profileImage?: string | null;
   price: number;
   priceChange: number;
   performance: number[];
@@ -57,6 +58,7 @@ export interface LiveMatchData {
     id: string;
     name: string;
     avatar: string;
+    profileImage?: string | null;
     rating: number;
     color: string;
   };
@@ -64,6 +66,7 @@ export interface LiveMatchData {
     id: string;
     name: string;
     avatar: string;
+    profileImage?: string | null;
     rating: number;
     color: string;
   };

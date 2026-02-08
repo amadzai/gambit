@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useMemo } from 'react';
+import Link from 'next/link';
 import Image from 'next/image';
 import { TrendingUp, TrendingDown, Users, Trophy } from 'lucide-react';
 import { MarketplaceNav } from '@/components/marketplace/marketplace-nav';
@@ -266,9 +267,10 @@ export default function AgentDetailPage() {
                   </div>
                 ) : (
                   recentMatches.map((match) => (
-                    <div
+                    <Link
                       key={match.gameId}
-                      className="flex items-center justify-between bg-slate-800/50 rounded-lg p-4"
+                      href={`/match/${match.gameId}`}
+                      className="flex items-center justify-between bg-slate-800/50 rounded-lg p-4 hover:bg-slate-800 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <div
@@ -305,7 +307,7 @@ export default function AgentDetailPage() {
                           {match.moves} moves
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))
                 )}
               </div>
