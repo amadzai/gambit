@@ -1,65 +1,144 @@
 # Partner Integrations
 
-This document points to where partner technologies are used in the Gambit codebase.
+This document explains **where and why** partner technologies are used in Gambit,
+with file‑level references for ETHGlobal HackMoney 2026 bounty review.
+
+## Quick Links
+
+- 🔗 [Uniswap v4 Integration](#uniswap-v4--coordination-layer-between-ai-performance-and-economic-outcomes)
+- 🔗 [ENS Integration](#ens-ethereum-name-service)
 
 ---
 
-## Uniswap V4
+## Uniswap v4 — Coordination Layer Between AI Performance and Economic Outcomes
 
-We use **Uniswap V4** in three main areas: (1) frontend for swapping/buying/selling agent tokens, (2) backend where the AI agent uses Uniswap via prompts and plugins, and (3) smart contracts where we deploy agent tokens as liquidity pools.
+> **TL;DR**: Uniswap v4 gives every AI agent its own market and liquidity, allowing
+> intelligence, confidence, and performance to be priced by the market.
+
+### Why Uniswap v4 Is a Good Fit
+
+Uniswap v4 is a core primitive for Gambit because agents are **economic actors**, not
+just game entities.
+
+- Each agent requires its own **market** (AgentToken/USDC)
+- Agents must **own liquidity** and interact with it autonomously
+- Pool‑level customization (hooks) enables protocol‑native economic logic
+
+Uniswap v4’s singleton architecture and hooks make it possible to deploy **hundreds of
+agent‑specific markets** with predictable behavior and low overhead.
+
+---
+
+### What’s Novel About Our Usage
+
+- **Per‑agent markets**: every AI agent gets its own Uniswap v4 pool
+- **Self‑owned LP**: agents own part of their own liquidity and can act on it
+- **AI‑driven trading**: swaps and LP management are initiated by LLM‑driven agents
+- **Performance ↔ market feedback loop**: match outcomes affect market cap, which
+  feeds back into agent strength
+
+This goes beyond a typical “DEX integration” — Uniswap v4 becomes the **coordination
+layer between AI performance and economic outcomes**.
+
+---
+
+### Future Improvements (Uniswap v4)
+
+- **Dynamic hooks**: adjust fees or liquidity behavior based on agent ELO or win rate
+- **Hook‑based slashing**: penalize agents economically after losses directly at the
+  pool level
+- **LP strategy agents**: allow agents to rebalance or widen/narrow ranges autonomously
+- **Cross‑agent pools**: shared pools for agent leagues or competitive tiers
+
+---
+
+<details>
+<summary><strong>Where Uniswap v4 Is Used (Code References)</strong></summary>
 
 ### 1. Frontend — Swapping / Buying & Selling Tokens
 
-| Location | Purpose |
-|----------|---------|
-| **`frontend/lib/contracts/uniswap.ts`** | Uniswap V4 address config, pool key/PoolId helpers, sqrt price limits, and price conversion. Used by all frontend swap flows. |
-| **`frontend/hooks/useAgentContract.ts`** | Main hook for agent token trading: reads pool state via StateView (`getSlot0`), executes **buy** (USDC → AgentToken) and **sell** (AgentToken → USDC) via **PoolSwapTest** `swap()`. Lines ~70–79 (addresses), ~86–98 (price from slot0), ~142–226 (buy: approve USDC + swap), ~228–313 (sell: approve token + swap). |
-| **`frontend/components/marketplace/trade-panel.tsx`** | UI for buy/sell: uses `TOKEN_DECIMALS` from `@/lib/contracts/uniswap`, wires `onBuy`/`onSell` to the swap flow (approve + swap). |
-| **`frontend/hooks/useDashboard.ts`** | Batch-reads Uniswap prices for marketplace agents via StateView (`getSlot0`) and `getUniswapAddresses()`. |
-| **`frontend/hooks/useMyDashboard.ts`** | Same pattern: batch Uniswap price reads for “My Dashboard” agents. |
-| **`frontend/lib/contracts/abis.ts`** | ABIs for Uniswap V4 **StateView** (read pool state) and **PoolSwapTest** (execute swaps). |
+| Location                                              | Purpose                                                                                                                                                              |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`frontend/lib/contracts/uniswap.ts`**               | Uniswap v4 address config, pool key / PoolId helpers, sqrt price limits, and price conversion. Used by all frontend swap flows.                                      |
+| **`frontend/hooks/useAgentContract.ts`**              | Main trading hook: reads pool state via StateView (`getSlot0`), executes **buy** (USDC → AgentToken) and **sell** (AgentToken → USDC) via **PoolSwapTest** `swap()`. |
+| **`frontend/components/marketplace/trade-panel.tsx`** | Buy/sell UI wiring approvals and swaps.                                                                                                                              |
+| **`frontend/hooks/useDashboard.ts`**                  | Batch Uniswap price reads for marketplace agents via StateView.                                                                                                      |
+| **`frontend/hooks/useMyDashboard.ts`**                | Same pattern for “My Dashboard” agents.                                                                                                                              |
+| **`frontend/lib/contracts/abis.ts`**                  | ABIs for Uniswap v4 **StateView** and **PoolSwapTest**.                                                                                                              |
 
-So: **swap execution** is in `useAgentContract.ts` (PoolSwapTest `swap`); **price display** uses StateView in that hook and in the dashboard hooks; **config/helpers** live in `frontend/lib/contracts/uniswap.ts`.
-
-### 2. Backend — Agent Uses Uniswap (Prompts + Plugins)
-
-| Location | Purpose |
-|----------|---------|
-| **`backend/src/service-modules/goat/ai/ai-agent.service.ts`** | **Prompt**: System prompt tells the agent it can “Swap tokens through Uniswap V4 pools” and how to buy/sell own token (approve PoolSwapTest, then `buyOwnToken` / `sellOwnToken`). **Plugins**: Registers `uniswapV4(...)` and `gambit(...)` (which includes AgentFactory buy/sell). Uses `UNISWAP_V4.POOL_SWAP_TEST` in the prompt text. |
-| **`backend/src/service-modules/goat/goat.service.ts`** | **Prompt**: Reserve-management prompt instructs the agent to use `approveUsdc` with `UNISWAP_V4.POOL_SWAP_TEST` and then `buyOwnToken`, or `approveToken` + `sellOwnToken` for selling. |
-| **`backend/src/service-modules/goat/events/match-event-listener.service.ts`** | **Prompt**: Post-match prompt tells the opponent agent to approve tokens for `UNISWAP_V4.POOL_SWAP_TEST` before selling. |
-| **`backend/src/service-modules/goat/constants/contracts.ts`** | **Config**: Base Sepolia Uniswap V4 addresses (PoolManager, PositionManager, PoolSwapTest, Quoter, etc.). |
-| **`backend/src/service-modules/goat/plugins/uniswap-v4/`** | **Uniswap V4 plugin** for the agent: |
-| → **`uniswap-v4.plugin.ts`** | Defines the Uniswap V4 plugin and hooks it into GOAT tools. |
-| → **`swap.service.ts`** | Tools: `swapExactInput` (PoolSwapTest swap), `getQuote` (Quoter). |
-| → **`position.service.ts`** | Tools: `getPositionInfo`, `increaseLiquidity`, `decreaseLiquidity`, `collectFees` (PositionManager). |
-| **`backend/src/service-modules/goat/plugins/gambit/agent-factory.service.ts`** | **Gambit plugin**: Tools `createAgent`, `buyOwnToken`, `sellOwnToken` — all describe using “Uniswap V4” for the pool/swap; `buyOwnToken` / `sellOwnToken` execute swaps via the AgentFactory contract (which in turn uses Uniswap V4). |
-
-So: **prompts** that mention Uniswap V4 and PoolSwapTest live in `ai-agent.service.ts`, `goat.service.ts`, and `match-event-listener.service.ts`; **tools** that call Uniswap V4 live in the `uniswap-v4` plugin (swap + position) and in the `gambit` plugin (AgentFactory create/buy/sell).
-
-### 3. Contracts — AgentFactory Deploys LP on Uniswap V4
-
-| Location | Purpose |
-|----------|---------|
-| **`dapp/src/AgentFactory.sol`** | **Uniswap V4 integration**: Imports v4-core/v4-periphery (`IPoolManager`, `IPositionManager`, `PoolKey`, `Actions`, `LiquidityAmounts`, etc.). Creates a **Uniswap V4 pool** per agent (AgentToken/USDC), initializes it, then adds **two LP positions** (user LP + agent LP) via PositionManager. |
-| → Pool creation | `_createPoolKey`, `poolManager.initialize(poolKey, sqrtPriceX96)` — see comments “Create Uniswap V4 pool” and “Initialize pool with 1:1 price” (~lines 204–214). |
-| → LP deployment | `_addLiquidity(poolKey, ...)` adds liquidity via **PositionManager** `modifyLiquidities`; user and agent each get an LP position (~lines 234–239, 444–502). |
-| → Buy/sell on V4 | `buyOwnToken` / `sellOwnToken` use the same pool via PositionManager-encoded swap actions (SWAP_EXACT_IN_SINGLE, SETTLE, TAKE) (~lines 345–389, and sell logic later in file). |
-| **`dapp/src/GambitHook.sol`** | Uniswap V4 **hook** for the pool (when used): fee split (e.g. 3% creator, 2% protocol). Pool creation in AgentFactory can target this hook. |
-| **`dapp/remappings.txt`** | Remappings for `@uniswap/v4-core` and `@uniswap/v4-periphery`. |
-| **`dapp/script/Deploy.s.sol`** | References Base Sepolia Uniswap V4 addresses for deployment. |
-
-So: **deploy as LP** = AgentFactory creates the pool and mints two LP positions (user + agent) on Uniswap V4; **swap path** for buy/sell in-contract goes through the same V4 pool via PositionManager.
+So: **swap execution** lives in `useAgentContract.ts`; **price display** uses StateView
+in trading and dashboard hooks; **config/helpers** live in
+`frontend/lib/contracts/uniswap.ts`.
 
 ---
 
-## ENS (Ethereum Name Service)
+### 2. Backend — Agent Uses Uniswap (Prompts + Plugins)
 
-We use **ENS** only to **show the user’s ENS name instead of their wallet address** in the UI.
+| Location                                                                       | Purpose                                                                                                                          |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| **`backend/src/service-modules/goat/ai/ai-agent.service.ts`**                  | Agent system prompt describes how to swap through Uniswap v4 and buy/sell own token; registers `uniswapV4` and `gambit` plugins. |
+| **`backend/src/service-modules/goat/goat.service.ts`**                         | Reserve‑management prompt instructs agents to approve PoolSwapTest and buy/sell tokens.                                          |
+| **`backend/src/service-modules/goat/events/match-event-listener.service.ts`**  | Post‑match prompt instructs losing agents to approve and sell tokens.                                                            |
+| **`backend/src/service-modules/goat/constants/contracts.ts`**                  | Base Sepolia Uniswap v4 contract addresses.                                                                                      |
+| **`backend/src/service-modules/goat/plugins/uniswap-v4/`**                     | Uniswap v4 GOAT plugin.                                                                                                          |
+| → **`uniswap-v4.plugin.ts`**                                                   | Plugin definition and tool registration.                                                                                         |
+| → **`swap.service.ts`**                                                        | Tools: `swapExactInput` (PoolSwapTest), `getQuote` (Quoter).                                                                     |
+| → **`position.service.ts`**                                                    | Tools: LP inspection and management via PositionManager.                                                                         |
+| **`backend/src/service-modules/goat/plugins/gambit/agent-factory.service.ts`** | Gambit tools (`createAgent`, `buyOwnToken`, `sellOwnToken`) that route swaps through Uniswap v4.                                 |
 
-| Location | Purpose |
-|----------|---------|
-| **`frontend/config/wagmiConfig.ts`** | Wagmi config includes **mainnet** solely for ENS resolution: comment states “mainnet is included solely for ENS name resolution”. ENS resolution runs on mainnet. |
-| **`frontend/components/marketplace/marketplace-nav.tsx`** | Resolves and displays ENS name: `useEnsName({ address, chainId: mainnet.id })` (line ~45). In the nav button, we show `ensName ?? truncated wallet address` (lines ~158–161), so users see their ENS name when available, otherwise the shortened address. |
+---
 
-No other ENS usage (e.g. reverse resolution elsewhere, or primary name resolution) is implemented in the repo; this is display-only in the marketplace nav.
+### 3. Contracts — AgentFactory Deploys LP on Uniswap v4
+
+| Location                        | Purpose                                                                                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`dapp/src/AgentFactory.sol`** | Creates per‑agent Uniswap v4 pools (AgentToken/USDC), initializes price, and mints **two LP positions** (user + agent) via PositionManager. |
+| → Pool creation                 | `_createPoolKey`, `poolManager.initialize(...)`                                                                                             |
+| → LP deployment                 | `_addLiquidity(...)` via PositionManager `modifyLiquidities`                                                                                |
+| → Buy/sell                      | `buyOwnToken` / `sellOwnToken` execute PositionManager‑encoded swaps                                                                        |
+| **`dapp/src/GambitHook.sol`**   | Uniswap v4 hook for protocol + creator fee routing.                                                                                         |
+| **`dapp/remappings.txt`**       | v4‑core and v4‑periphery remappings.                                                                                                        |
+| **`dapp/script/Deploy.s.sol`**  | Base Sepolia Uniswap v4 deployment config.                                                                                                  |
+
+</details>
+
+---
+
+## ENS (Ethereum Name Service) — Human‑Readable Identity Layer for Agents and Wallets
+
+> **TL;DR**: ENS improves usability by showing human‑readable names instead of raw
+> addresses in a multi‑agent marketplace.
+
+### Why ENS Is a Good Fit as an Identity Layer
+
+ENS serves as a **human‑readable identity layer** for Gambit agents and users.
+
+Each agent and user interacts through multiple contracts and wallets. ENS provides:
+
+- A stable, recognizable name for agents and their owners
+- Clear attribution in marketplaces and match views
+- Better UX during demos and judging
+
+ENS is intentionally used at the **display layer only** — it does not perform authentication, authorization, or access control.
+
+### Future Improvements (ENS)
+
+- ENS names for **agents themselves** (e.g. `alpha.gambit.eth`)
+- Reverse resolution for agent‑owned wallets
+- ENS subdomains minted on agent creation
+- ENS metadata pointing to agent stats and match history
+- Treat ENS as the canonical agent identity (name + metadata), with contracts remaining the source of truth for ownership and permissions
+
+---
+
+<details>
+<summary><strong>Where ENS Is Used (Code References)</strong></summary>
+
+| Location                                                  | Purpose                                                                            |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| **`frontend/config/wagmiConfig.ts`**                      | Includes Ethereum mainnet solely for ENS resolution.                               |
+| **`frontend/components/marketplace/marketplace-nav.tsx`** | Resolves and displays ENS names via `useEnsName`; falls back to truncated address. |
+
+ENS is not used elsewhere in the codebase.
+
+</details>
