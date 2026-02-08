@@ -23,6 +23,42 @@ export interface MatchStartRequest {
 }
 
 /**
+ * Input for the challenge flow: on-chain challenge → accept → start chess match.
+ */
+export interface ChallengeRequest {
+  /** Agent initiating the challenge. */
+  challengerAgentId: string;
+  /** Agent being challenged. */
+  opponentAgentId: string;
+  /** Stake amount in human-readable USDC (e.g. "1" for 1 USDC). */
+  stakeAmount: string;
+  /** Number of Stockfish candidate moves (MultiPV). Default 10. */
+  multiPv?: number;
+  /** Stockfish analysis time in milliseconds. Default 200. */
+  movetimeMs?: number;
+  /** Delay between moves in milliseconds. Default 2000. */
+  delayMs?: number;
+}
+
+/**
+ * Input for accepting an existing on-chain challenge and starting the chess match.
+ */
+export interface AcceptChallengeRequest {
+  /** On-chain match ID (bytes32) from the ChallengeCreated event. */
+  onChainMatchId: string;
+  /** Agent that created the challenge (will play as white). */
+  challengerAgentId: string;
+  /** Agent accepting the challenge (will play as black). */
+  opponentAgentId: string;
+  /** Number of Stockfish candidate moves (MultiPV). Default 10. */
+  multiPv?: number;
+  /** Stockfish analysis time in milliseconds. Default 200. */
+  movetimeMs?: number;
+  /** Delay between moves in milliseconds. Default 2000. */
+  delayMs?: number;
+}
+
+/**
  * Payload pushed via SSE after each move in a match.
  */
 export interface MatchMoveEvent {

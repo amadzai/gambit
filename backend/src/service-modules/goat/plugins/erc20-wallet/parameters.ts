@@ -53,6 +53,23 @@ export class TransferTokenParams extends toolParams(
 ) {}
 
 /**
+ * Approve a spender to spend USDC from the agent wallet.
+ * Only needs the spender address and amount in human-readable USDC (e.g. "10").
+ */
+export class ApproveUsdcParams extends toolParams(
+  z.object({
+    spender: z
+      .string()
+      .describe('The address to approve for spending'),
+    amount: z
+      .string()
+      .describe(
+        'Amount of USDC to approve in human-readable units (e.g. "10" for 10 USDC)',
+      ),
+  }),
+) {}
+
+/**
  * No parameters needed — USDC address and wallet address are both auto-injected.
  */
 export class EmptyParams extends toolParams(z.object({})) {}
