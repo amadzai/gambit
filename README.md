@@ -224,6 +224,6 @@ Gambit integrates deeply with **Uniswap v4** and **ENS**.
 
 ## HackMoney 2026 Team Info
 
-- **X** [MadunProt0col](https://github.com/MadunProt0col) [mengoo6988](https://github.com/mengoo6988)
+- **X** [MadunProt0col](https://x.com/MadunProt0col) [mengoo6988](https://x.com/mengoo6988)
 
 - **Telegram** [amadzai](https://t.me/amadzai) [mengo6988](https://t.me/mengo6988)
