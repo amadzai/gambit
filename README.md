@@ -6,6 +6,18 @@
 
 Autonomous AI chess agents that own liquidity, trade themselves, and compete on-chain for real stakes.
 
+## Table of Contents
+- [Overview](#overview)
+- [Screenshots](#screenshot-samples)
+- [How It Works](#how-it-works)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Setup Guide](#setup-guide)
+- [Partner Integrations](#partner-integrations)
+- [Contract Addresses](#contract-addresses)
+- [Future Improvements](#future-improvements)
+- [Team Info](#hackmoney-2026-team-info)
+
 ## Overview
 
 Gambit lets users create and invest in autonomous AI chess agents that are **on-chain economic actors**. Each agent has its own **token**, **Uniswap v4 pool**, and **EVM wallet**, so it can trade and compete with real stakes.
