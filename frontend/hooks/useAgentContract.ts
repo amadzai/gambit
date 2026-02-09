@@ -19,6 +19,7 @@ import {
   MIN_SQRT_PRICE_LIMIT,
   MAX_SQRT_PRICE_LIMIT,
   HOOKLESS_HOOKS,
+  marketCapToElo,
 } from '@/lib/contracts/uniswap';
 import { apiService } from '@/utils/apiService';
 
@@ -58,6 +59,7 @@ export interface UseAgentContractResult {
 export function useAgentContract(
   tokenAddress: string | null | undefined,
   agentId?: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onEloUpdated?: () => void,
 ): UseAgentContractResult {
   const { address: userAddress } = useWallet();
@@ -191,40 +193,30 @@ export function useAgentContract(
 
         // 3. Sync ELO
         // --- Market-cap-based ELO (use once pool price is correct) ---
-        // const { data: newSlot0 } = await refetchPrice();
-        // if (newSlot0 && agentId) {
-        //   const newSqrt = newSlot0[0] as bigint;
-        //   if (newSqrt > BigInt(0)) {
-        //     const newPrice = getAgentTokenPrice(newSqrt, tokenAddr!, addresses.usdc);
-        //     const newMcap = newPrice * AGENT_TOKEN_TOTAL_SUPPLY;
-        //     const newElo = marketCapToElo(newMcap);
-        //     await apiService.agent.update(agentId, { elo: newElo });
-        //   }
-        // }
-
-        if (agentId) {
-          const agent = await apiService.agent.getById(agentId);
-          const newElo = computeNewElo(agent.elo ?? BASE_ELO_DEFAULT, parseFloat(amount), true);
-          await apiService.agent.update(agentId, { elo: newElo });
-          onEloUpdated?.();
+        const { data: newSlot0 } = await refetchPrice();
+        if (newSlot0 && agentId) {
+          const newSqrt = newSlot0[0] as bigint;
+          if (newSqrt > BigInt(0)) {
+            const newPrice = getAgentTokenPrice(newSqrt, tokenAddr!, addresses.usdc);
+            const newMcap = newPrice * AGENT_TOKEN_TOTAL_SUPPLY;
+            const newElo = marketCapToElo(newMcap);
+            await apiService.agent.update(agentId, { elo: newElo });
+          }
         }
+
+        // if (agentId) {
+        //   const agent = await apiService.agent.getById(agentId);
+        //   const newElo = marketCapToElo(agent.elo ?? BASE_ELO_DEFAULT, parseFloat(amount), true);
+        //   await apiService.agent.update(agentId, { elo: newElo });
+        //   onEloUpdated?.();
+        // }
 
         refetch();
       } finally {
         setIsBuying(false);
       }
     },
-    [
-      poolKey,
-      hasToken,
-      tokenAddr,
-      addresses,
-      writeContractAsync,
-      config,
-      refetch,
-      agentId,
-      onEloUpdated,
-    ],
+    [poolKey, hasToken, writeContractAsync, addresses.usdc, addresses.poolSwapTest, config, tokenAddr, refetchPrice, agentId, refetch],
   );
 
   // ── Sell: AgentToken → USDC ───────────────────────────────────────
@@ -274,40 +266,30 @@ export function useAgentContract(
 
         // 3. Sync ELO
         // --- Market-cap-based ELO (use once pool price is correct) ---
-        // const { data: newSlot0 } = await refetchPrice();
-        // if (newSlot0 && agentId) {
-        //   const newSqrt = newSlot0[0] as bigint;
-        //   if (newSqrt > BigInt(0)) {
-        //     const newPrice = getAgentTokenPrice(newSqrt, tokenAddr!, addresses.usdc);
-        //     const newMcap = newPrice * AGENT_TOKEN_TOTAL_SUPPLY;
-        //     const newElo = marketCapToElo(newMcap);
-        //     await apiService.agent.update(agentId, { elo: newElo });
-        //   }
-        // }
-
-        if (agentId) {
-          const agent = await apiService.agent.getById(agentId);
-          const newElo = computeNewElo(agent.elo ?? BASE_ELO_DEFAULT, parseFloat(amount), false);
-          await apiService.agent.update(agentId, { elo: newElo });
-          onEloUpdated?.();
+        const { data: newSlot0 } = await refetchPrice();
+        if (newSlot0 && agentId) {
+          const newSqrt = newSlot0[0] as bigint;
+          if (newSqrt > BigInt(0)) {
+            const newPrice = getAgentTokenPrice(newSqrt, tokenAddr!, addresses.usdc);
+            const newMcap = newPrice * AGENT_TOKEN_TOTAL_SUPPLY;
+            const newElo = marketCapToElo(newMcap);
+            await apiService.agent.update(agentId, { elo: newElo });
+          }
         }
+
+        // if (agentId) {
+        //   const agent = await apiService.agent.getById(agentId);
+        //   const newElo = computeNewElo(agent.elo ?? BASE_ELO_DEFAULT, parseFloat(amount), false);
+        //   await apiService.agent.update(agentId, { elo: newElo });
+        //   onEloUpdated?.();
+        // }
 
         refetch();
       } finally {
         setIsSelling(false);
       }
     },
-    [
-      poolKey,
-      hasToken,
-      tokenAddr,
-      addresses,
-      writeContractAsync,
-      config,
-      refetch,
-      agentId,
-      onEloUpdated,
-    ],
+    [poolKey, hasToken, writeContractAsync, tokenAddr, addresses.poolSwapTest, addresses.usdc, config, refetchPrice, agentId, refetch],
   );
 
   return {
