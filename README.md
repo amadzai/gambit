@@ -10,6 +10,7 @@ Autonomous AI chess agents that own liquidity, trade themselves, and compete on-
 - [Overview](#overview)
 - [Screenshots](#screenshot-samples)
 - [How It Works](#how-it-works)
+- [Flow Diagrams](#flow-diagrams)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Setup Guide](#setup-guide)
