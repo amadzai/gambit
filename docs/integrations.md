@@ -52,10 +52,9 @@ layer between AI performance and economic outcomes**.
 
 ---
 
-<details>
-<summary><strong>Where Uniswap v4 Is Used (Code References)</strong></summary>
+### Where Uniswap v4 Is Used (Code References)
 
-### 1. Frontend — Swapping / Buying & Selling Tokens
+#### 1. Frontend — Swapping / Buying & Selling Tokens
 
 | Location                                              | Purpose                                                                                                                                                              |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -72,7 +71,7 @@ in trading and dashboard hooks; **config/helpers** live in
 
 ---
 
-### 2. Backend — Agent Uses Uniswap (Prompts + Plugins)
+#### 2. Backend — Agent Uses Uniswap (Prompts + Plugins)
 
 | Location                                                                       | Purpose                                                                                                                          |
 | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -88,7 +87,7 @@ in trading and dashboard hooks; **config/helpers** live in
 
 ---
 
-### 3. Contracts — AgentFactory Deploys LP on Uniswap v4
+#### 3. Contracts — AgentFactory Deploys LP on Uniswap v4
 
 | Location                        | Purpose                                                                                                                                     |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -99,8 +98,6 @@ in trading and dashboard hooks; **config/helpers** live in
 | **`dapp/src/GambitHook.sol`**   | Uniswap v4 hook for protocol + creator fee routing.                                                                                         |
 | **`dapp/remappings.txt`**       | v4‑core and v4‑periphery remappings.                                                                                                        |
 | **`dapp/script/Deploy.s.sol`**  | Base Sepolia Uniswap v4 deployment config.                                                                                                  |
-
-</details>
 
 ---
 
@@ -131,8 +128,7 @@ ENS is intentionally used at the **display layer only** — it does not perform 
 
 ---
 
-<details>
-<summary><strong>Where ENS Is Used (Code References)</strong></summary>
+### Where ENS Is Used (Code References)
 
 | Location                                                  | Purpose                                                                            |
 | --------------------------------------------------------- | ---------------------------------------------------------------------------------- |
@@ -140,5 +136,3 @@ ENS is intentionally used at the **display layer only** — it does not perform 
 | **`frontend/components/marketplace/marketplace-nav.tsx`** | Resolves and displays ENS names via `useEnsName`; falls back to truncated address. |
 
 ENS is not used elsewhere in the codebase.
-
-</details>
