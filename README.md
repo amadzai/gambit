@@ -4,188 +4,166 @@
 
 # Gambit — AI Chess Agent Launchpad
 
-> Autonomous AI chess agents that **own liquidity**, **trade themselves**, and **fight on-chain for real stakes**.
+Autonomous AI chess agents that own liquidity, trade themselves, and compete on-chain for real stakes.
 
-- **Network**: Base Sepolia (84532)
-- **Core primitive**: AI agents as economic actors
-- **Built with**: Uniswap v4 + GOAT SDK
+## Overview
 
----
+Gambit lets users create and invest in autonomous AI chess agents that are **on-chain economic actors**. Each agent has its own **token**, **Uniswap v4 pool**, and **EVM wallet**, so it can trade and compete with real stakes.
 
-## Why Gambit Is Novel
+What we solve:
 
-- AI agents own Uniswap v4 liquidity
-- Agent strength is market-priced (ELO ↔ market cap)
-- Agents invest in themselves to get stronger
-- Competitive AI with on-chain enforcement and no custody
+- **Skin in the Game**: Agents aren’t just simulations, they own wallets and liquidity, and performance affects market value.
+- **Market-Priced Strength**: Market Cap = ELO, giving an objective measure of “how good” an agent is as markets continuously price confidence
+- **Trust-Minimized Competition**: Stakes are locked on-chain, contracts enforce settlement, and there’s no custodial risk.
 
----
+Match outcomes directly impact valuation:
 
-## Gambit in 30 Seconds
+- **Winning agents** gain liquidity and grow stronger (ELO)
+- **Losing agents** lose liquidity and grow weaker (ELO)
 
-1. Users create AI chess agents with USDC
-2. Each agent gets a token + Uniswap v4 pool
-3. Buying the token increases ELO (strength)
-4. Agents challenge each other with on-chain stakes
-5. Matches run off-chain and settle on-chain
-6. Winning increases value; losing destroys it
+By linking AI performance to market forces, Gambit creates a competitive ecosystem where the strongest agents survive and evolve.
 
-Markets decide who survives.
+## Quick Links
 
-## Docs & Quick Links (For Judges)
-
-- 📘 **Overview & Narrative**: [`docs/overview.md`](docs/overview.md)
 - 🔗 **Partner Integrations (Uniswap v4, ENS)**: [`docs/integrations.md`](docs/integrations.md)
-- ♟️ **Agent Match Flow (on‑chain ↔ off‑chain)**: [`docs/agent-match-flow.md`](docs/agent-match-flow.md)
-- 🚀 **Deployments & Contract Addresses & Agent Transactions**: [`docs/deployments.md`](docs/deployments.md)
-- 🖼️ **Screenshots (Desktop & Mobile)**: [`docs/screenshots/`](docs/screenshots/)
-- 🏗️ **Architecture diagram**: [`docs/architecture.png`](docs/architecture.png)
-- 👨🏻‍🏫 **Pitch Deck**: [canva/slides](https://www.canva.com/design/DAHAv7A8aBY/lRh0Ue9NKGPLXEvKElkAyA/edit?utm_content=DAHAv7A8aBY&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
-- 👨🏻‍🏫 **Demo Video**: [loom/demo](https://www.loom.com/share/41f13d0b31fc47548ea71641150f9a12)
----
+- 🚀 **Contract Addresses & Agent Transactions**: [`docs/deployments.md`](docs/deployments.md)
+- 🗂 **Pitch Deck**: [Canva](https://www.canva.com/design/DAHAv7A8aBY/lRh0Ue9NKGPLXEvKElkAyA/edit?utm_content=DAHAv7A8aBY&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
+- 🎥 **Demo**: [Loom](https://www.loom.com/share/41f13d0b31fc47548ea71641150f9a12)
+- 🖼️ **All Screenshots**: [`docs/screenshots/`](docs/screenshots/)
 
-## Screenshots
+## Screenshot Samples
 
-| Landing page                                     | Marketplace                                      | Agent Page                              | Live Match                                      |
-| ------------------------------------------------- | ------------------------------------------------ | --------------------------------------- | ----------------------------------------------- |
-| ![](docs/screenshots/desktop/Landing.png)         | ![](docs/screenshots/desktop/MarketplaceTop.png) | ![](docs/screenshots/desktop/Agent.png) | ![](docs/screenshots/desktop/LiveMatchFull.png) |
+### Landing Page
+
+![Landing Page](docs/screenshots/desktop/Landing.png)
 
 <details>
-<summary>Landing Responsive</summary>
-
-| Desktop                                           | Mobile                                             |
-| ------------------------------------------------- | -------------------------------------------------- |
-| ![](docs/screenshots/desktop/LandingFull.png)     | ![](docs/screenshots/mobile/LandingFull.png)       |
+  <summary>Mobile version</summary>
+  
+  ![Landing Mobile](docs/screenshots/mobile/LandingFull.png)
 </details>
 
----
+### Agent Trading Page
+
+![Agent Trading Page](docs/screenshots/desktop/Agent.png)
+
+<details>
+  <summary>Mobile version</summary>
+  
+  ![Agent Trading Page Mobile](docs/screenshots/mobile/MarketplaceFull.png)
+</details>
+
+### Live Match Page
+
+![Live Match Page](docs/screenshots/desktop/LiveMatchFull.png)
+
+<details>
+  <summary>Mobile version</summary>
+  
+  ![Live Match Page Mobile](docs/screenshots/mobile/LiveMatchFull.png)
+</details>
 
 ## How It Works
 
 ### Autonomous Agents
 
-- Each agent controls its own EVM wallet
-- Agents can buy/sell their own token
-- Behavior is driven by GOAT SDK tools
+- Each agent controls its own **EVM wallet**
+- Each agent has its own **token + Uniswap v4 pool**
+- Agents can **buy/sell their own token** to manage strength and reserves
+- On-chain actions are driven by **GOAT SDK tools**
 
-### Matches
+### Strength = Market Demand
 
-- Challenges and stakes are locked on-chain
-- Chess runs off-chain (Stockfish + LLM)
-- Backend signs results
-- Contracts enforce settlement
+- **ELO is tied to market cap** (buying increases strength, selling decreases it)
+- Markets create a feedback loop: **value → strength → performance → value**
 
----
+### Matches (On-chain stakes, off-chain play)
 
-## Uniswap v4 Usage (HackMoney Bounty)
+- **Challenges + stakes** are locked **on-chain** (`MatchEngine`)
+- Chess match loops runs **off-chain** (Stockfish candidates + LLM style selection)
+- Moves stream live to the UI (spectators can follow)
+- Backend **signs the result**
+- Contracts **enforce settlement** and pay the winner
 
-- One Uniswap v4 pool per agent (Agent/USDC)
-- Dual LP positions: creator + agent
-- Agent-owned liquidity used for self-buybacks, sells to replenish reserves, lp management
-- Custom hook for fee routing
+<!-- ## Flow Diagrams -->
 
----
+## Tech Stack
 
-## Architecture
+| Layer                | Technology                    | Purpose                                              |
+| -------------------- | ----------------------------- | ---------------------------------------------------- |
+| **Backend**          | NestJS                        | API + service modules (agents, chess, matches)       |
+| **Database**         | Supabase (PostgreSQL)         | Persistent storage                                   |
+| **ORM**              | Prisma                        | Database access + schema management                  |
+| **Agents**           | GOAT SDK                      | Autonomous agents (tool-calling on-chain actions)    |
+| **Chess Rules**      | chess.js                      | Legal moves + game state validation                  |
+| **Chess Engine**     | Stockfish                     | Candidate move generation + evaluation               |
+| **Frontend**         | Next.js                       | Marketplace, agent pages, live match UI              |
+| **Chess UI**         | chessboard.js                 | Board rendering + move visualization                 |
+| **Wallet**           | Privy, wagmi, viem            | Auth + wallet connection + contract reads/writes     |
+| **Contracts**        | Solidity                      | Protocol contracts (AgentFactory, MatchEngine, Hook) |
+| **Dapp Framework**   | Foundry                       | Build/test/deploy scripts                            |
+| **DEX**              | Uniswap v4 (core + periphery) | Per-agent pools + swaps + LP positions               |
+| **Hooks**            | Uniswap v4 Hooks              | Fee routing (creator + protocol)                     |
+| **Security / Utils** | OpenZeppelin, Permit2         | Standard libraries + token approvals for v4 flows    |
 
-<p align="center">
-  <img src="docs/architecture.png" alt="Gambit architecture" width="800" />
-</p>
+## Project Structure
 
-> Full-size: [docs/architecture.png](docs/architecture.png)
+```
+gambit/
+├── backend/                      # NestJS + Prisma + chess + agent runtime
+│   ├── prisma/                   # Prisma schema + migrations
+│   └── src/
+│       ├── api-modules/          # HTTP controllers + DTOs (agent, chess, match)
+│       └── service-modules/      # Core services
+│           ├── chess-service/    # chess.js rules + Stockfish engine adapter
+│           ├── agent-service/    # agent CRUD + move selection / behaviors
+│           ├── match/            # match loop + SSE streaming + orchestration
+│           ├── goat/             # GOAT SDK agents + plugins (Uniswap v4, ERC20)
+│           └── prisma/           # Prisma module/service wiring
+├── frontend/                     # Next.js app (marketplace, agents, live match UI)
+│   ├── app/                      # Route tree (dashboard, match view, etc.)
+│   ├── components/               # UI components (marketplace, arena, dashboard)
+│   ├── hooks/                    # Data + web3 hooks (trading, dashboards)
+│   ├── lib/contracts/            # Contract config, ABIs, Uniswap helpers
+│   └── config/                   # wagmi + Privy configuration
+├── dapp/                         # Foundry (Solidity contracts)
+│   ├── src/                      # AgentFactory, MatchEngine, GambitHook, tokens
+│   ├── script/                   # Deploy scripts (e.g. Base Sepolia)
+│   ├── test/                     # Contract tests
+│   └── examples/                 # Reference scripts (swap/quote/liquidity)
+└── docs/                         # Docs (deployments, integrations, screenshots)
+```
 
-**Frontend**
-
-- Next.js, wagmi, Privy, chessboard.js
-
-**Backend**
-
-- NestJS, Prisma, Stockfish, chess.js
-- GOAT SDK for agent reasoning
-
-**Smart Contracts**
-
-- AgentFactory
-- MatchEngine
-- GambitHook (Uniswap v4)
-
----
-
-## Trust Model
-
-- No custodial funds
-- Stakes locked on-chain
-- Deterministic settlement via contracts
-- Backend cannot steal user funds
-
-## Setup
+## Setup Guide
 
 ### Prerequisites
 
 - Docker + Docker Compose
-- Node.js
-- pnpm
-- Stockfish installed and available as `stockfish` on your PATH
-- A Base Sepolia RPC URL
+- Node.js + pnpm
+- An OpenRouter API key
 
 ### Backend (`backend/`)
-
-1. Install deps
 
 ```bash
 cd backend
 pnpm install
-```
-
-2. Configure env
-
-```bash
 cp .env.example .env
-```
-
-Fill in (names match `backend/.env.example`):
-
-- **Database (Supabase Postgres)**: `DATABASE_URL`, `DIRECT_URL`
-- **OpenRouter**: `OPEN_ROUTER_API_KEY` (and optionally `OPEN_ROUTER_MODEL`)
-- **Chain config**: `RPC_URL` (and optionally `WSS_URL`)
-- **Agent key management**: `WALLET_ENCRYPTION_KEY`, `RESULT_SIGNER_PRIVATE_KEY`
-- **Contract addresses**: `AGENT_FACTORY_ADDRESS`, `MATCH_ENGINE_ADDRESS`, `GAMBIT_HOOK_ADDRESS`, `USDC_ADDRESS`
-
-3. Start the backend (dev container)
-
-```bash
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-Notes:
+#### Match Settings
 
-- Swagger is exposed by the backend (see `backend/src/main.ts`) and is typically available at `/api`.
-- Prisma schema lives at `backend/prisma/schema.prisma`.
+```
+MATCH_FREQUENCY=600        # How often agents challenge each other in seconds
+DEFAULT_STAKE_AMOUNT=10    # USDC staked per agent per match
+```
 
 ### Frontend (`frontend/`)
-
-1. Install deps
 
 ```bash
 cd frontend
 pnpm install
-```
-
-2. Configure env
-
-```bash
 cp .env.example .env
-```
-
-Fill in (names match `frontend/.env.example`):
-
-- **Privy**: `NEXT_PUBLIC_PRIVY_APP_ID`
-- **Addresses**: `NEXT_PUBLIC_*_ADDRESS` entries (Uniswap v4 + Gambit contracts + USDC)
-- **API**: `NEXT_PUBLIC_API_URL` (should point to the backend, default `http://localhost:3001`)
-
-3. Run the dev server
-
-```bash
 pnpm dev
 ```
 
@@ -198,43 +176,46 @@ forge build
 forge test
 ```
 
-Deployment notes and addresses:
+> **Note**: The contract addresses in all `.env.example` files are deployed on **Base Sepolia**.
 
-- `docs/deployments.md`
+## Partner Integrations
 
-## Project Structure
+Gambit integrates deeply with **Uniswap v4** and **ENS**.
 
-Monorepo layout:
+- **Uniswap v4**: per-agent pools, agent-owned LP positions, swaps, and custom hooks
+- **ENS**: display-only name resolution for addresses in the frontend
 
-- `backend/` — NestJS + Prisma + chess + GOAT
-  - `src/service-modules/chess-service/` — chess rules (`chess.js`) + Stockfish engine adapter
-  - `src/service-modules/match/` — match orchestration + SSE streaming + on-chain challenge helpers
-  - `src/service-modules/goat/` — agent decision loop + plugins (Uniswap v4, ERC20 wallet, Gambit)
-- `frontend/` — Next.js app (responsive UI)
-  - `app/(marketplace)/...` — marketplace pages (agents, dashboards, match view)
-  - `hooks/` — match streaming + trading hooks
-  - `lib/contracts/` — Uniswap v4 helpers + ABIs
-- `dapp/` — Foundry smart contracts
-  - `src/AgentFactory.sol` — creates tokens, pools, and LP positions
-  - `src/MatchEngine.sol` — challenges + stake locking + settlement
-  - `src/GambitHook.sol` — Uniswap v4 hook for fee routing
-- `docs/` — high-signal docs for judges (overview, integrations, deployments, flows)
+📁 **Detailed integration notes (with file-level references)**: [`docs/integrations.md`](docs/integrations.md)
 
 ## Contract Addresses
 
-All deployed addresses (Base Sepolia) are tracked in `docs/deployments.md`.
+### Core Contracts (Base Sepolia)
 
-## HackMoney 2026 — Integrations
+| Contract     | Address                                      |
+| ------------ | -------------------------------------------- |
+| Mock USDC    | `0xf107f0fB952915B6f8FEe2A3Cd1c9e190F517F28` |
+| AgentFactory | `0x1ee685955De442700dB1A8A6D200D0f44B033FA3` |
+| GambitHook   | `0x96099866e12d6493dD3945B241B5A86B43e8d4f8` |
+| MatchEngine  | `0xc52009763C35DAE5D7A831FF4932DCab08e4169c` |
 
-Gambit integrates deeply with **Uniswap v4**, and **ENS**.
+### Sample Agents
 
-- **Uniswap v4**: per‑agent pools, LP ownership, swaps, and custom hooks
-- **ENS**: display‑only address resolution in the frontend
+| Agent       | Token Address                                | Agent Wallet                                 |
+| ----------- | -------------------------------------------- | -------------------------------------------- |
+| English Bot | `0x75CEF9084b66034AC972B42e49B7fAA319c4848a` | `0x1a450a1D16F9964ceC33822D5896783b0Ec5e706` |
+| King Bot    | `0x6d7DF00a4355237F8b87C0eF7D07C59284e727d5` | `0xde31469f9e870E810020f029EfA189F31E860D22` |
 
-📄 **Detailed integration notes and file‑level references**:
-👉 [`docs/integrations.md`](docs/integrations.md)
+### Agent Transactions
 
-## Future Improvements / Roadmap
+| Tx Hash                                                              |
+| -------------------------------------------------------------------- |
+| `0x396909219ee287fe60d4b94a82f1b6004f60b2b4069fc863852fcec14dc26c1c` |
+| `0x65ad37837694fd60774afff98a67dfa5ba9fa7e784a4325c54213091b4a549c4` |
+| `0xabde6e65294fc4a99946155a76bb2aaeba8dedde602b8e65a3aed6e5a0d116fa` |
+
+📃 Full list (all contracts, agents, and transactions): [`docs/deployments.md`](docs/deployments.md)
+
+## Future Improvements
 
 - **Protocol**: stronger settlement verification + dispute flow; richer on-chain match metadata
 - **Agents**: improved ELO ↔ market dynamics; more playstyles; stronger post-match treasury logic
@@ -242,5 +223,7 @@ Gambit integrates deeply with **Uniswap v4**, and **ENS**.
 - **UX**: richer charts, match replay UX, notifications, better onboarding
 
 ## HackMoney 2026 Team Info
-- X: @MadunProt0col @mengoo6988
-- Telegram: @amadzai @mengo6988
+
+- **X** [MadunProt0col](https://x.com/MadunProt0col) [mengoo6988](https://x.com/mengoo6988)
+
+- **Telegram** [amadzai](https://t.me/amadzai) [mengo6988](https://t.me/mengo6988)
